@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Fortify · A walkthrough</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #19180D;
+      --ash: #2E2D29;
+      --bark: #593B2E;
+      --rust: #834112;
+      --olive: #47513D;
+      --moss: #687254;
+      --tan: #BDA27F;
+      --cream: #E6DBCA;
+      --parchment: #F0E9DB;
+      --signal: #D14625;
+
+      --font-display: 'Fraunces', 'Times New Roman', serif;
+      --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      background-color: var(--parchment);
+      background-image:
+        radial-gradient(circle at 18% 28%, rgba(189, 162, 127, 0.18) 0%, transparent 55%),
+        radial-gradient(circle at 82% 72%, rgba(131, 65, 18, 0.07) 0%, transparent 60%);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-weight: 400;
+      line-height: 1.55;
+      overflow: hidden;
+      min-height: 100vh;
+    }
+
+    /* Subtle paper grain — adds warmth, never noise */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.45;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      mix-blend-mode: multiply;
+    }
+
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: 9vh 11vw 11vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 2;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Stagger reveal on slide enter */
+    .slide.active .stagger > * {
+      animation: rise 800ms cubic-bezier(0.2, 0.6, 0.2, 1) backwards;
+    }
+    .slide.active .stagger > *:nth-child(1) { animation-delay: 220ms; }
+    .slide.active .stagger > *:nth-child(2) { animation-delay: 360ms; }
+    .slide.active .stagger > *:nth-child(3) { animation-delay: 500ms; }
+    .slide.active .stagger > *:nth-child(4) { animation-delay: 640ms; }
+    .slide.active .stagger > *:nth-child(5) { animation-delay: 780ms; }
+    .slide.active .stagger > *:nth-child(6) { animation-delay: 920ms; }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Typography system */
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--rust);
+      margin-bottom: 3rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .eyebrow::before {
+      content: '';
+      width: 28px;
+      height: 1px;
+      background: var(--rust);
+    }
+
+    .display {
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: clamp(2.4rem, 5.4vw, 5.4rem);
+      line-height: 1.04;
+      letter-spacing: -0.022em;
+      color: var(--ink);
+      max-width: 22ch;
+      font-variation-settings: 'opsz' 144;
+    }
+    .display em {
+      font-style: italic;
+      color: var(--rust);
+      font-variation-settings: 'opsz' 144;
+    }
+
+    .display-sm {
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: clamp(1.8rem, 3.4vw, 3rem);
+      line-height: 1.15;
+      letter-spacing: -0.015em;
+      color: var(--ink);
+      max-width: 30ch;
+    }
+    .display-sm em {
+      font-style: italic;
+      color: var(--rust);
+    }
+
+    .body {
+      font-family: var(--font-body);
+      font-size: clamp(1rem, 1.18vw, 1.18rem);
+      line-height: 1.65;
+      color: var(--ash);
+      max-width: 56ch;
+      margin-top: 2.2rem;
+      font-weight: 400;
+    }
+    .body strong {
+      color: var(--ink);
+      font-weight: 500;
+    }
+    .body em {
+      font-style: italic;
+      color: var(--rust);
+      font-weight: 400;
+    }
+
+    .micro {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--bark);
+    }
+
+    /* SLIDE 1 — title */
+    #s1 {
+      justify-content: center;
+      padding-top: 9vh;
+      padding-bottom: 9vh;
+    }
+    #s1 .mark {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      color: var(--rust);
+      margin-bottom: 0.6rem;
+    }
+    #s1 .mark span {
+      color: var(--ash);
+      font-weight: 400;
+      font-style: italic;
+      margin-left: 0.5rem;
+      font-size: 0.85em;
+    }
+    #s1 .hero {
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 7vw, 7.6rem);
+      font-weight: 300;
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+      max-width: 18ch;
+      font-variation-settings: 'opsz' 144;
+    }
+    #s1 .hero em {
+      font-style: italic;
+      color: var(--rust);
+      font-weight: 400;
+    }
+    #s1 .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 4rem;
+      flex-wrap: wrap;
+      margin-top: 3rem;
+    }
+    #s1 .footer .right {
+      text-align: right;
+    }
+    #s1 .footer h2 {
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-style: italic;
+      font-size: 1.2rem;
+      color: var(--ash);
+      margin-bottom: 0.4rem;
+    }
+
+    /* SLIDE 4 — two-column body cascade (his + hers) */
+    .body-cascade-upstream {
+      margin-top: 2.2rem;
+      font-family: var(--font-body);
+      font-size: clamp(1rem, 1.18vw, 1.18rem);
+      line-height: 1.6;
+      color: var(--ink);
+      font-weight: 500;
+      max-width: 70ch;
+    }
+    .body-cascade-upstream em {
+      font-style: italic;
+      color: var(--rust);
+      font-weight: 400;
+    }
+    .body-cascade {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 3.5rem;
+      margin-top: 1.8rem;
+      max-width: 95ch;
+    }
+    .body-cascade-col {
+      display: flex;
+      flex-direction: column;
+    }
+    .body-cascade-label {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--rust);
+      margin-bottom: 1.2rem;
+    }
+    .body-cascade-stanza {
+      font-family: var(--font-body);
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--ash);
+    }
+    .body-cascade-stanza + .body-cascade-stanza {
+      margin-top: 1.4rem;
+    }
+    .body-cascade-stanza em {
+      font-style: italic;
+      color: var(--rust);
+      font-weight: 400;
+    }
+    .body-cascade-close {
+      margin-top: 2.8rem;
+      max-width: 70ch;
+      font-family: var(--font-body);
+      font-size: clamp(1rem, 1.18vw, 1.18rem);
+      line-height: 1.6;
+      color: var(--ink);
+      font-weight: 500;
+    }
+    .body-cascade-close em {
+      font-style: italic;
+      color: var(--rust);
+      font-weight: 400;
+    }
+
+    /* SLIDE 4 — cascade in a body
+       SLIDE 5 — three more like it */
+    .cascade-stack {
+      display: flex;
+      flex-direction: column;
+      margin-top: 2.6rem;
+      max-width: 78ch;
+    }
+    .cascade-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 2.4rem;
+      padding: 1.5rem 0;
+      border-top: 1px solid rgba(89, 59, 46, 0.18);
+      align-items: baseline;
+    }
+    .cascade-row:last-child {
+      border-bottom: 1px solid rgba(89, 59, 46, 0.18);
+    }
+    .cascade-label {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--rust);
+    }
+    .cascade-prose {
+      font-family: var(--font-body);
+      font-size: 1.02rem;
+      line-height: 1.6;
+      color: var(--ash);
+      max-width: 62ch;
+    }
+    .cascade-prose em {
+      font-style: italic;
+      color: var(--rust);
+      font-weight: 400;
+    }
+
+    /* SLIDE 7 — domain network */
+    #s7 {
+      flex-direction: row;
+      align-items: center;
+      gap: 4rem;
+      padding-left: 7vw;
+      padding-right: 5vw;
+    }
+    .net-side {
+      flex: 0 0 30%;
+      min-width: 280px;
+    }
+    .net-side .display-sm {
+      margin-bottom: 1.2rem;
+    }
+    .net-side .body {
+      margin-top: 0;
+      font-size: 0.97rem;
+    }
+    .net-canvas {
+      flex: 1;
+      position: relative;
+      height: 80vh;
+      max-height: 820px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .net-canvas svg {
+      width: 100%;
+      height: 100%;
+      max-width: 760px;
+      max-height: 760px;
+      overflow: visible;
+    }
+
+    .net-link {
+      stroke: var(--tan);
+      stroke-width: 0.9;
+      opacity: 0.35;
+      transition: opacity 320ms ease, stroke 320ms ease, stroke-width 320ms ease;
+      fill: none;
+    }
+    .net-link.secondary {
+      stroke: var(--bark);
+      stroke-width: 1.5;
+      opacity: 0.55;
+    }
+    .net-link.keystone {
+      stroke: var(--rust);
+      stroke-width: 2.0;
+      opacity: 0.75;
+    }
+    .net-link.highlight {
+      stroke: var(--rust);
+      stroke-width: 2.6;
+      opacity: 1;
+    }
+
+    .net-node-group {
+      cursor: pointer;
+      transition: transform 280ms cubic-bezier(0.2, 0.7, 0.2, 1);
+      transform-origin: center;
+      transform-box: fill-box;
+    }
+    .net-node {
+      fill: var(--cream);
+      stroke: var(--bark);
+      stroke-width: 1.2;
+      transition: fill 280ms, stroke 280ms, stroke-width 280ms;
+    }
+    .net-node-group:hover .net-node,
+    .net-node-group.hover .net-node {
+      fill: var(--rust);
+      stroke: var(--rust);
+    }
+    .net-node-group.connected .net-node {
+      stroke: var(--rust);
+      stroke-width: 2;
+    }
+    .net-code {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      fill: var(--bark);
+      text-anchor: middle;
+      dominant-baseline: middle;
+      pointer-events: none;
+      transition: fill 280ms;
+    }
+    .net-node-group:hover .net-code,
+    .net-node-group.hover .net-code {
+      fill: var(--parchment);
+    }
+    .net-label {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: 14px;
+      fill: var(--ash);
+      pointer-events: none;
+      transition: opacity 280ms, fill 280ms;
+    }
+
+    /* Dim non-connected when hovering */
+    .net-canvas.has-hover .net-link:not(.highlight) { opacity: 0.07; }
+    .net-canvas.has-hover .net-node-group:not(.hover):not(.connected) .net-node {
+      opacity: 0.28;
+    }
+    .net-canvas.has-hover .net-node-group:not(.hover):not(.connected) .net-label,
+    .net-canvas.has-hover .net-node-group:not(.hover):not(.connected) .net-code {
+      opacity: 0.28;
+    }
+
+    /* Detail panel */
+    .net-detail {
+      position: absolute;
+      bottom: 4vh;
+      left: 8vw;
+      right: 8vw;
+      background: var(--cream);
+      border: 1px solid rgba(89, 59, 46, 0.22);
+      padding: 1.6rem 2rem 1.4rem;
+      max-width: 580px;
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 320ms, transform 320ms;
+      z-index: 5;
+      box-shadow: 0 18px 40px rgba(25, 24, 13, 0.06);
+    }
+    .net-detail.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .net-detail .micro {
+      color: var(--rust);
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    .net-detail h4 {
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: 1.5rem;
+      color: var(--ink);
+      margin-bottom: 0.7rem;
+      letter-spacing: -0.01em;
+    }
+    .net-detail p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: var(--ash);
+    }
+    .net-detail .close {
+      position: absolute;
+      top: 1rem;
+      right: 1.2rem;
+      background: none;
+      border: none;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--bark);
+      cursor: pointer;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: color 200ms;
+    }
+    .net-detail .close:hover { color: var(--rust); }
+
+    /* SLIDE 8 — the work */
+    .work-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.4rem 4rem;
+      margin-top: 3rem;
+      max-width: 92ch;
+    }
+    .work-item {
+      display: flex;
+      gap: 1.6rem;
+      align-items: flex-start;
+    }
+    .work-num {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--rust);
+      letter-spacing: 0.1em;
+      padding-top: 0.5rem;
+      flex: 0 0 auto;
+    }
+    .work-body h3 {
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: 1.65rem;
+      color: var(--ink);
+      margin-bottom: 0.45rem;
+      letter-spacing: -0.01em;
+    }
+    .work-body p {
+      font-family: var(--font-body);
+      font-size: 0.98rem;
+      color: var(--ash);
+      line-height: 1.55;
+    }
+
+    /* SLIDE 9 — what changes */
+    .change-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+    .change-stack .display {
+      font-size: clamp(2.4rem, 5.2vw, 5rem);
+      max-width: none;
+    }
+
+    /* SLIDE 10 — the reckoning */
+    #s10 { justify-content: center; text-align: left; }
+    #s10 .arrival {
+      font-family: var(--font-display);
+      font-weight: 300;
+      font-size: clamp(2.2rem, 4.6vw, 4.4rem);
+      line-height: 1.14;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      max-width: 52ch;
+      font-variation-settings: 'opsz' 144;
+    }
+    #s10 .arrival em {
+      font-style: italic;
+      color: var(--rust);
+    }
+
+    /* SLIDE 12 — the door */
+    #s12 { justify-content: center; }
+    .door-price {
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-style: italic;
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      color: var(--rust);
+      letter-spacing: -0.01em;
+      margin-top: 2.6rem;
+    }
+    .door-email {
+      margin-top: 2.4rem;
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+    }
+    .door-email a {
+      color: var(--rust);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(131, 65, 18, 0.35);
+      padding-bottom: 2px;
+      transition: border-color 220ms, color 220ms;
+    }
+    .door-email a:hover {
+      color: var(--ink);
+      border-bottom-color: var(--rust);
+    }
+
+    /* Chrome */
+    .chrome {
+      position: fixed;
+      z-index: 10;
+      pointer-events: none;
+      transition: opacity 400ms ease;
+    }
+    /* Title slide — hide top header so it doesn'''t compete with the brand mark; keep bottom nav */
+    body:has(#s1.active) .chrome.top {
+      opacity: 0;
+    }
+    .chrome.top {
+      top: 2.4vh;
+      left: 11vw;
+      right: 11vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 1.05rem;
+      color: var(--rust);
+      letter-spacing: -0.01em;
+    }
+    .brand span {
+      color: var(--ash);
+      font-weight: 400;
+      font-style: italic;
+      margin-left: 0.45rem;
+      font-size: 0.85em;
+    }
+    .counter {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      color: var(--bark);
+    }
+    .chrome.bottom {
+      bottom: 2.6vh;
+      left: 11vw;
+      right: 11vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .dots {
+      display: flex;
+      gap: 0.6rem;
+      pointer-events: auto;
+    }
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: rgba(89, 59, 46, 0.4);
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      transition: background 250ms, transform 250ms, box-shadow 250ms;
+    }
+    .dot:hover { background: rgba(131, 65, 18, 0.7); }
+    .dot.active {
+      background: var(--rust);
+      transform: scale(1.5);
+      box-shadow: 0 0 0 1px rgba(131, 65, 18, 0.25);
+    }
+    .nav-arrows {
+      display: flex;
+      gap: 0.4rem;
+      pointer-events: auto;
+    }
+    .arrow-btn {
+      background: none;
+      border: 1px solid rgba(89, 59, 46, 0.32);
+      width: 40px;
+      height: 32px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--bark);
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      transition: all 220ms;
+    }
+    .arrow-btn:hover {
+      border-color: var(--rust);
+      color: var(--rust);
+      background: rgba(131, 65, 18, 0.05);
+    }
+    .arrow-btn:disabled {
+      opacity: 0.28;
+      cursor: not-allowed;
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 2.6vh;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      color: rgba(89, 59, 46, 0.5);
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 9;
+      opacity: 0;
+      animation: fadeInOut 4.5s ease forwards;
+      animation-delay: 1.2s;
+    }
+    @keyframes fadeInOut {
+      0% { opacity: 0; }
+      25% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* Responsive guard */
+    @media (max-width: 960px) {
+      .slide { padding: 6vh 6vw 9vh; }
+      #s7 { flex-direction: column; gap: 1.5rem; padding: 6vh 6vw 9vh; }
+      .net-side { flex: 0 0 auto; }
+      .net-canvas { height: 60vh; }
+      .work-list { grid-template-columns: 1fr; gap: 1.6rem; }
+      .chrome.top, .chrome.bottom { left: 6vw; right: 6vw; }
+      .cascade-row { grid-template-columns: 100px 1fr; gap: 1.2rem; }
+      .body-cascade { grid-template-columns: 1fr; gap: 2rem; }
+    }
+
+    /* ============================================
+       DARK MODE OVERRIDES
+       Activate by adding class="dark" to <body>
+       Palette + original light-mode rules untouched
+       ============================================ */
+    body.dark {
+      /* Brighten rust slightly so small mono labels + italic accents stay legible on ink */
+      --rust: #AC5618;
+
+      background-color: var(--ink);
+      background-image:
+        radial-gradient(circle at 18% 28%, rgba(189, 162, 127, 0.05) 0%, transparent 55%),
+        radial-gradient(circle at 82% 72%, rgba(172, 86, 24, 0.10) 0%, transparent 60%);
+      color: var(--parchment);
+    }
+    body.dark::before {
+      opacity: 0.22;
+      mix-blend-mode: screen;
+    }
+
+    /* Headlines + body copy — light text */
+    body.dark .display,
+    body.dark .display-sm,
+    body.dark #s1 .hero,
+    body.dark #s10 .arrival,
+    body.dark .work-body h3,
+    body.dark .body,
+    body.dark .body strong,
+    body.dark .cascade-prose,
+    body.dark .body-cascade-stanza,
+    body.dark .body-cascade-upstream,
+    body.dark .body-cascade-close,
+    body.dark .work-body p {
+      color: var(--parchment);
+    }
+
+    /* Small / mono labels */
+    body.dark .micro,
+    body.dark .counter,
+    body.dark .arrow-btn,
+    body.dark #s1 .footer h2,
+    body.dark #s1 .mark span,
+    body.dark .brand span {
+      color: var(--tan);
+    }
+
+    /* Borders + rules — bark rgba flipped to tan rgba */
+    body.dark .cascade-row { border-top-color: rgba(189, 162, 127, 0.18); }
+    body.dark .cascade-row:last-child { border-bottom-color: rgba(189, 162, 127, 0.18); }
+    body.dark .arrow-btn { border-color: rgba(189, 162, 127, 0.32); }
+    body.dark .dot { background: rgba(189, 162, 127, 0.4); }
+    body.dark .dot:hover { background: rgba(172, 86, 24, 0.75); }
+    body.dark .dot.active { box-shadow: 0 0 0 1px rgba(172, 86, 24, 0.3); }
+    body.dark .hint { color: rgba(189, 162, 127, 0.5); }
+    body.dark .arrow-btn:hover { background: rgba(172, 86, 24, 0.10); }
+
+    /* Domain network — node fills go dark, strokes + text go warm-light */
+    body.dark .net-node {
+      fill: var(--ash);
+      stroke: var(--tan);
+    }
+    body.dark .net-code { fill: var(--tan); }
+    body.dark .net-label { fill: var(--tan); }
+    body.dark .net-detail {
+      background: var(--ash);
+      border-color: rgba(189, 162, 127, 0.22);
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+    }
+    body.dark .net-detail h4 { color: var(--parchment); }
+    body.dark .net-detail p,
+    body.dark .net-detail .close { color: var(--tan); }
+
+    /* Door email — brighten link border on dark */
+    body.dark .door-email a {
+      border-bottom-color: rgba(172, 86, 24, 0.5);
+    }
+    body.dark .door-email a:hover {
+      color: var(--parchment);
+    }
+
+    /* ============================================
+       EDIT MODE — activated by #edit in URL
+       Everything below is invisible unless body.editing
+       ============================================ */
+    body.editing [contenteditable] {
+      cursor: text;
+      transition: outline 140ms ease;
+    }
+    body.editing [contenteditable]:hover {
+      outline: 1px dashed rgba(172, 86, 24, 0.45);
+      outline-offset: 6px;
+    }
+    body.editing [contenteditable]:focus {
+      outline: 2px solid var(--rust);
+      outline-offset: 6px;
+    }
+
+    .edit-ui {
+      position: fixed;
+      top: 1.2rem;
+      right: 1.2rem;
+      z-index: 100;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      font-family: var(--font-mono);
+      background: rgba(46, 45, 41, 0.92);
+      padding: 0.5rem 0.6rem 0.5rem 0.9rem;
+      border: 1px solid rgba(189, 162, 127, 0.3);
+      backdrop-filter: blur(6px);
+    }
+    .edit-status {
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--tan);
+      padding-right: 0.6rem;
+      border-right: 1px solid rgba(189, 162, 127, 0.2);
+    }
+    .edit-status.unsaved { color: #E8A06D; }
+    .edit-save-path {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      color: var(--tan);
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding-right: 0.6rem;
+      border-right: 1px solid rgba(189, 162, 127, 0.2);
+    }
+    .edit-save-path:empty { display: none; }
+    .edit-btn {
+      padding: 0.45rem 0.9rem;
+      background: var(--rust);
+      color: var(--parchment);
+      border: none;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 150ms;
+    }
+    .edit-btn:hover { background: #C5601C; }
+    .edit-btn-secondary {
+      background: transparent;
+      color: var(--tan);
+      border: 1px solid rgba(189, 162, 127, 0.3);
+    }
+    .edit-btn-secondary:hover {
+      background: rgba(189, 162, 127, 0.08);
+      color: var(--parchment);
+    }
+
+    .edit-help {
+      position: fixed;
+      bottom: 1.2rem;
+      right: 1.2rem;
+      z-index: 100;
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      color: var(--tan);
+      background: rgba(46, 45, 41, 0.9);
+      padding: 0.7rem 0.9rem;
+      border: 1px solid rgba(189, 162, 127, 0.2);
+      backdrop-filter: blur(6px);
+      display: flex;
+      flex-direction: column;
+      gap: 0.42rem;
+      line-height: 1;
+      letter-spacing: 0.06em;
+    }
+    .edit-help-row { display: flex; align-items: center; gap: 0.6rem; }
+    .edit-help kbd {
+      display: inline-block;
+      background: rgba(189, 162, 127, 0.14);
+      padding: 2px 6px;
+      border: 1px solid rgba(189, 162, 127, 0.22);
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      min-width: 2.4em;
+      text-align: center;
+      color: var(--parchment);
+    }
+
+    .edit-toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--rust);
+      color: var(--parchment);
+      padding: 1.1rem 2rem;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      z-index: 200;
+      animation: toastIn 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translate(-50%, -40%); }
+      to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+
+    /* ============================================
+       MOBILE + ORIENTATION ADAPT  (added 2026-06-04)
+       Overlay only. Every desktop rule above is untouched.
+       Goal: clean render and live reflow when a phone is
+       rotated between portrait and landscape, plus touch
+       swipe navigation and no iOS toolbar clipping.
+       ============================================ */
+
+    /* Dynamic viewport height: stops iOS Safari's address bar
+       from clipping the bottom of a slide, and keeps full height
+       correct in both orientations. */
+    .deck { height: 100vh; height: 100dvh; }
+    @supports (height: 100dvh) { body { min-height: 100dvh; } }
+
+    /* Shared phone behavior (either orientation): a slide that is
+       taller than the screen scrolls instead of clipping, and the
+       nav controls become real touch targets. */
+    @media (max-width: 820px), (max-height: 600px) {
+      body { -webkit-text-size-adjust: 100%; }
+      .slide {
+        justify-content: flex-start;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+      }
+      #s1, #s10, #s12 { justify-content: flex-start; }
+      .arrow-btn { width: 46px; height: 40px; font-size: 1.15rem; }
+      .dot { width: 11px; height: 11px; }
+      .dots { gap: 0.7rem; }
+      .hint { display: none; }            /* keyboard hint is wrong on touch */
+      .net-detail {
+        position: fixed;
+        left: 4vw; right: 4vw;
+        bottom: calc(env(safe-area-inset-bottom) + 8vh);
+        max-width: none;
+      }
+    }
+
+    /* PHONE PORTRAIT: tall and narrow. Stack everything, text goes
+       full width, type sizes off width, content clears the chrome. */
+    @media (orientation: portrait) and (max-width: 820px) {
+      .slide {
+        padding: calc(env(safe-area-inset-top) + 9vh) 7vw
+                 calc(env(safe-area-inset-bottom) + 13vh);
+      }
+      .display      { font-size: clamp(2rem, 8.5vw, 3.2rem); max-width: 18ch; }
+      .display-sm   { font-size: clamp(1.6rem, 6.8vw, 2.4rem); max-width: 24ch; }
+      #s1 .hero     { font-size: clamp(2.6rem, 11vw, 4rem); max-width: 14ch; }
+      #s10 .arrival { font-size: clamp(1.7rem, 6.4vw, 2.4rem); max-width: 30ch; }
+      .body, .body-cascade-upstream, .body-cascade-close,
+      .cascade-prose { font-size: 1.02rem; max-width: 100%; }
+      .eyebrow { margin-bottom: 1.6rem; }
+      #s7 { flex-direction: column; align-items: stretch; justify-content: flex-start;
+            gap: 1.4rem; padding-left: 7vw; padding-right: 7vw; }
+      .net-side { flex: 0 0 auto; min-width: 0; width: 100%; }
+      .net-canvas { width: 100%; height: auto; aspect-ratio: 1 / 1; max-height: 64vh; }
+      .work-list { grid-template-columns: 1fr; gap: 1.6rem; }
+      .body-cascade { grid-template-columns: 1fr; gap: 1.8rem; }
+      .cascade-row { grid-template-columns: 92px 1fr; gap: 1rem; }
+      .change-stack .display { font-size: clamp(2rem, 9vw, 3.4rem); }
+      #s1 .footer { gap: 1.5rem; }
+    }
+
+    /* PHONE / SHORT LANDSCAPE: wide and short. Vertical space is the
+       constraint, so type and vertical padding shrink and size off
+       height; the network stays beside its text since width is ample. */
+    @media (orientation: landscape) and (max-height: 600px) {
+      .slide {
+        padding: calc(env(safe-area-inset-top) + 7vh) 8vw
+                 calc(env(safe-area-inset-bottom) + 9vh);
+      }
+      .display      { font-size: clamp(1.6rem, 4.6vh, 2.6rem); max-width: 26ch; }
+      .display-sm   { font-size: clamp(1.4rem, 4vh, 2rem); max-width: 34ch; }
+      #s1 .hero     { font-size: clamp(2rem, 7.5vh, 3.4rem); max-width: 18ch; }
+      #s10 .arrival { font-size: clamp(1.3rem, 3.8vh, 2rem); max-width: 60ch; }
+      .body { margin-top: 1.2rem; }
+      .eyebrow { margin-bottom: 1rem; }
+      #s7 { flex-direction: row; align-items: center; justify-content: center; gap: 2.5vw; }
+      .net-side { flex: 0 0 38%; min-width: 0; }
+      .net-canvas { height: 82vh; max-height: none; }
+      .work-list { grid-template-columns: 1fr 1fr; gap: 1rem 2.5vw; margin-top: 1.4rem; }
+      .change-stack .display { font-size: clamp(1.5rem, 4.4vh, 2.4rem); }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="deck">
+
+    <!-- SLIDE 1 — title -->
+    <div class="slide active" id="s1">
+      <div class="stagger">
+        <div class="mark">Fortify<span>™</span></div>
+      </div>
+      <div class="stagger">
+        <h1 class="hero">The existence you always knew was <em>possible.</em></h1>
+      </div>
+      <div class="stagger footer">
+        <div>
+          <span class="micro">A walkthrough</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2 — premise -->
+    <div class="slide" id="s2">
+      <div class="stagger"><div class="eyebrow">The premise</div></div>
+      <div class="stagger">
+        <h2 class="display">Every part of you affects<br><em>every other part.</em></h2>
+      </div>
+      <div class="stagger">
+        <p class="body">Your physical health shapes your cognitive performance. Your relationships shape your leadership. Your sense of purpose shapes your financial decisions.</p>
+        <p class="body" style="margin-top: 1rem;"><strong>The premise is simple. Almost no one builds on it.</strong></p>
+      </div>
+    </div>
+
+    <!-- SLIDE 3 — what success can hold -->
+    <div class="slide" id="s3">
+      <div class="stagger"><div class="eyebrow">What success can hold</div></div>
+      <div class="stagger">
+        <h2 class="display">Most leadership development optimizes the parts that are<br><em>easy to talk about.</em></h2>
+      </div>
+      <div class="stagger">
+        <p class="body">Success can hold a version of you it hasn't made room for.</p>
+        <p class="body" style="margin-top: 1rem;"><strong>That work hasn't happened yet.</strong></p>
+      </div>
+    </div>
+
+    <!-- SLIDE 4 — cascade in a body -->
+    <div class="slide" id="s4">
+      <div class="stagger"><div class="eyebrow">A cascade</div></div>
+      <div class="stagger">
+        <h2 class="display-sm">What this looks like<br><em>in a body.</em></h2>
+      </div>
+      <div class="stagger">
+        <div class="body-cascade">
+          <div class="body-cascade-col">
+            <div class="body-cascade-label">Her body</div>
+            <p class="body-cascade-stanza">Sustained cortisol suppresses the HPG axis.<br>Estrogen and progesterone fall.<br>The cycle goes irregular, then silent.</p>
+            <p class="body-cascade-stanza">What she experiences is a personal letdown.<br>A body she doesn't recognize.<br>A shame with no source she can name.</p>
+          </div>
+          <div class="body-cascade-col">
+            <div class="body-cascade-label">His body</div>
+            <p class="body-cascade-stanza">The same cortisol. Same axis.<br>Testosterone falls.<br>One week of restricted sleep can drop it fifteen percent.</p>
+            <p class="body-cascade-stanza">What he experiences is a private failure.<br>A sexual symptom.<br>A shame with no source he can name.</p>
+          </div>
+        </div>
+      </div>
+      <div class="stagger">
+        <p class="body-cascade-close"><strong>It has a source.<br>The source is the <em>11pm meeting</em> three months in a row.</strong></p>
+      </div>
+    </div>
+
+    <!-- SLIDE 5 — three more like it -->
+    <div class="slide" id="s5">
+      <div class="stagger"><div class="eyebrow">Three more like it</div></div>
+      <div class="stagger">
+        <div class="cascade-stack">
+          <div class="cascade-row">
+            <div class="cascade-label">Identity</div>
+            <p class="cascade-prose">Job loss is a <em>neurological identity event.</em><br>The brain processes a title loss in the regions that process social rejection.</p>
+          </div>
+          <div class="cascade-row">
+            <div class="cascade-label">Intimacy</div>
+            <p class="cascade-prose">Sexual withdrawal reads to the partner as <em>rejection.</em><br>71.8% of partners in affected couples show difficulty themselves. 38.1% in unaffected.<br>The damage compounds on its own.</p>
+          </div>
+          <div class="cascade-row">
+            <div class="cascade-label">Mind-Body</div>
+            <p class="cascade-prose">Combined physical and psychological intervention produces nearly <em>double</em> the wellbeing effect of either alone.<br>SMD = 0.73. 183 RCTs. 22,811 participants.<br>The strongest single signal in wellbeing science.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6 — the architecture (now earned) -->
+    <div class="slide" id="s6">
+      <div class="stagger"><div class="eyebrow">The architecture</div></div>
+      <div class="stagger">
+        <h2 class="display">Twenty-two connections like the ones you just read.<br>Across ten domains.<br><em>In three layers.</em></h2>
+      </div>
+      <div class="stagger">
+        <p class="body">No domain is independent. The connections are the model.</p>
+        <p class="body" style="margin-top: 1rem;"><strong>Most coaching works a domain at a time. The body has been saying this all along. The science finally agrees. The work lives at the seams.</strong></p>
+      </div>
+    </div>
+
+    <!-- SLIDE 7 — domain network (interactive) -->
+    <div class="slide" id="s7">
+      <div class="net-side stagger">
+        <div class="eyebrow">The ten domains</div>
+        <h2 class="display-sm">The network <em>is</em> the model.</h2>
+        <p class="body" style="margin-top: 1.2rem;">No domain is independent. The 22 documented connections are where coaching lives.</p>
+        <p class="micro" style="margin-top: 2.4rem; color: var(--rust);">→ Hover or tap any domain</p>
+      </div>
+      <div class="net-canvas" id="netCanvas">
+        <svg viewBox="0 0 800 800" id="netSvg" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="net-detail" id="netDetail">
+          <button class="close" onclick="closeNetDetail()">Close</button>
+          <span class="micro" id="netDetailCode"></span>
+          <h4 id="netDetailName"></h4>
+          <p id="netDetailBody"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8 — the work -->
+    <div class="slide" id="s8">
+      <div class="stagger"><div class="eyebrow">The work</div></div>
+      <div class="stagger">
+        <h2 class="display-sm">Four moves. Six months.<br><em>One person beside you.</em></h2>
+      </div>
+      <div class="stagger">
+        <div class="work-list">
+          <div class="work-item">
+            <div class="work-num">01</div>
+            <div class="work-body">
+              <h3>Align</h3>
+              <p>Across 10 Domains of a whole life, we map all of you. We find the keystone. The place where small shifts move everything.</p>
+            </div>
+          </div>
+          <div class="work-item">
+            <div class="work-num">02</div>
+            <div class="work-body">
+              <h3>Investigate</h3>
+              <p>A map with 22 documented connections, we go where the compass points. The places that have been managed, not addressed.</p>
+            </div>
+          </div>
+          <div class="work-item">
+            <div class="work-num">03</div>
+            <div class="work-body">
+              <h3>Strengthen</h3>
+              <p>Together, we do the work. In-person and asynchronously, I'll be where you need me most. Building from the foundation through to the finish.</p>
+            </div>
+          </div>
+          <div class="work-item">
+            <div class="work-num">04</div>
+            <div class="work-body">
+              <h3>Move forward</h3>
+              <p>Fortified and ready. You step back into the domains of your life confident, alive, ready to perform better than ever.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 9 — what changes -->
+    <div class="slide" id="s9">
+      <div class="stagger"><div class="eyebrow">What changes</div></div>
+      <div class="stagger">
+        <div class="change-stack">
+          <h2 class="display">You perform <em>differently.</em></h2>
+          <h2 class="display">You lead <em>differently.</em></h2>
+          <h2 class="display">You live <em>differently.</em></h2>
+        </div>
+      </div>
+      <div class="stagger">
+        <p class="body" style="margin-top: 2.5rem;">You finally operated from what's true.</p>
+        <p class="body" style="margin-top: 1rem;"><strong>The arrival is real.</strong></p>
+      </div>
+    </div>
+
+    <!-- SLIDE 10 — the reckoning -->
+    <div class="slide" id="s10">
+      <div class="stagger">
+        <h2 class="arrival">The existence you always knew was possible<br>is found by <em>going through the reckoning,</em><br>with someone beside you,<br>and rebuilding from what's true.<br><br>Optimizing harder is a waste of fuel and time.</h2>
+      </div>
+    </div>
+
+    <!-- SLIDE 11 — Jeremy -->
+    <div class="slide" id="s11">
+      <div class="stagger"><div class="eyebrow">Jeremy</div></div>
+      <div class="stagger">
+        <h2 class="display-sm">Dad.<br>Coach.<br>Writer.<br>Executive.</h2>
+      </div>
+      <div class="stagger">
+        <p class="body">A lifelong coach and creator,<br>I built Fortify as the help I needed most,<br>the help that didn't exist.<br>Until now.</p>
+        <p class="body" style="margin-top: 1rem;">I run it for a small number of people.<br>In person and at depth.</p>
+        <p class="body" style="margin-top: 1.6rem;"><strong>If you're still reading, the next step is yours.</strong></p>
+      </div>
+    </div>
+
+    <!-- SLIDE 12 — the door -->
+    <div class="slide" id="s12">
+      <div class="stagger"><div class="eyebrow">If this is your work</div></div>
+      <div class="stagger">
+        <h2 class="display-sm">Six months.<br>Weekly sessions.<br><em>In-person intensives.</em></h2>
+      </div>
+      <div class="stagger">
+        <p class="door-price">Sixty thousand dollars.</p>
+      </div>
+      <div class="stagger">
+        <p class="door-email"><a href="mailto:jeremy@reckthefort.com">jeremy@reckthefort.com</a></p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Fixed chrome -->
+  <div class="chrome top">
+    <div class="brand">Fortify<span>a walkthrough</span></div>
+    <div class="counter"><span id="counterCurrent">01</span> · <span id="counterTotal">12</span></div>
+  </div>
+
+  <div class="chrome bottom">
+    <div class="dots" id="dots"></div>
+    <div class="nav-arrows">
+      <button class="arrow-btn" id="prevBtn" aria-label="Previous slide">←</button>
+      <button class="arrow-btn" id="nextBtn" aria-label="Next slide">→</button>
+    </div>
+  </div>
+
+  <div class="hint">Arrow keys, dots, or click the arrows to navigate</div>
+
+  <script>
+    /* ============ Slide navigation ============ */
+    const slides = document.querySelectorAll('.slide');
+    const total = slides.length;
+    const dotsContainer = document.getElementById('dots');
+    const counterCurrent = document.getElementById('counterCurrent');
+    const counterTotal = document.getElementById('counterTotal');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    counterTotal.textContent = String(total).padStart(2, '0');
+
+    // Clear any dots that might exist (defensive: prevents doubling if reloading a file that wasn't serialized cleanly)
+    dotsContainer.innerHTML = '';
+
+    for (let i = 0; i < total; i++) {
+      const d = document.createElement('button');
+      d.className = 'dot' + (i === 0 ? ' active' : '');
+      d.setAttribute('aria-label', `Go to slide ${i + 1}`);
+      d.addEventListener('click', () => go(i));
+      dotsContainer.appendChild(d);
+    }
+    const dots = dotsContainer.querySelectorAll('.dot');
+
+    let current = 0;
+
+    function go(i) {
+      if (i < 0 || i >= total || i === current) return;
+      slides[current].classList.remove('active');
+      dots[current].classList.remove('active');
+      current = i;
+      slides[current].classList.add('active');
+      dots[current].classList.add('active');
+      counterCurrent.textContent = String(current + 1).padStart(2, '0');
+      prevBtn.disabled = current === 0;
+      nextBtn.disabled = current === total - 1;
+      if (slides[current].id !== 's7') closeNetDetail();
+    }
+
+    function next() { go(Math.min(current + 1, total - 1)); }
+    function prev() { go(Math.max(current - 1, 0)); }
+
+    prevBtn.addEventListener('click', prev);
+    nextBtn.addEventListener('click', next);
+    prevBtn.disabled = true;
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); next(); }
+      if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+      if (e.key === 'Home') go(0);
+      if (e.key === 'End') go(total - 1);
+    });
+
+    /* ============ Domain network ============ */
+    const domains = [
+      { code: 'ID', name: 'Identity', label: 'Self-concept & values',
+        detail: 'Who you believe yourself to be determines almost everything else. Deloitte: 67% of C-suite executives "cover" core aspects of their identity at work, creating measurable psychological drain.' },
+      { code: 'ME', name: 'Mental', label: 'Emotional wellbeing',
+        detail: '26% of executives report depression symptoms vs. 18% in the general workforce, often while fully functional. You can be high-performing and deeply struggling simultaneously.' },
+      { code: 'CG', name: 'Cognitive', label: 'Brain & focus',
+        detail: 'Chronic stress causes measurable dendritic atrophy in the prefrontal cortex, impairing judgment, empathy, and strategic thinking. Largely reversible with adequate recovery.' },
+      { code: 'PH', name: 'Physical', label: 'Health & vitality',
+        detail: 'The most potent wellbeing intervention available. Exercise, sleep, and nutrition are the biological substrate everything else runs on.' },
+      { code: 'SX', name: 'Sexual', label: 'Intimacy & desire',
+        detail: 'Absent from every major wellbeing framework. Fortify names it directly. 46.79% of high-stress workers show sexual dysfunction; 45% of affected men never seek help.' },
+      { code: 'RL', name: 'Relational', label: 'Partnerships',
+        detail: 'Close relationships are biological determinants of health. Your partner\'s attachment style affects your own cortisol reactivity and immune function.' },
+      { code: 'SC', name: 'Social', label: 'Community',
+        detail: '50% of CEOs report loneliness in role; 61% say it affects their performance. The prescription is fewer, deeper connections, not more events.' },
+      { code: 'SP', name: 'Spiritual', label: 'Meaning & purpose',
+        detail: 'Not about religion. About whether your life feels like it means something. Purpose in Life is the strongest single predictor in Ryff\'s six-factor wellbeing model.' },
+      { code: 'EN', name: 'Environmental', label: 'Space & nature',
+        detail: 'Your physical environment shapes nervous system regulation without your conscious awareness. 120 min/week in nature produces measurable wellbeing improvements.' },
+      { code: 'FI', name: 'Financial', label: 'Security & identity',
+        detail: 'Not about wealth. About your relationship with money and what it signals about who you are. For executives, compensation becomes identity.' }
+    ];
+
+    const center = { x: 400, y: 400 };
+    const radius = 270;
+
+    domains.forEach((d, i) => {
+      const angle = (-90 + (i * 360 / domains.length)) * Math.PI / 180;
+      d.x = center.x + radius * Math.cos(angle);
+      d.y = center.y + radius * Math.sin(angle);
+    });
+
+    // Four primary keystone cascades — heaviest stroke
+    const keystones = [
+      ['FI', 'ID'],
+      ['PH', 'ME'],
+      ['PH', 'SX'],
+      ['SX', 'RL']
+    ];
+
+    // Four secondary keystone cascades — medium stroke
+    const secondaries = [
+      ['PH', 'CG'],
+      ['FI', 'ME'],
+      ['SC', 'ME'],
+      ['SP', 'ME']
+    ];
+
+    // Fourteen supporting connections — light stroke. Together with the eight keystones above, 22 documented connections.
+    const ambient = [
+      ['ID', 'SP'], ['ID', 'ME'], ['ME', 'CG'], ['PH', 'EN'],
+      ['SX', 'ME'], ['RL', 'SC'], ['SC', 'SP'], ['SP', 'EN'],
+      ['FI', 'SC'], ['EN', 'CG'], ['RL', 'ME'], ['ID', 'RL'],
+      ['PH', 'FI'], ['SC', 'ID']
+    ];
+
+    function connectionsFor(code) {
+      const conns = new Set();
+      keystones.concat(secondaries).concat(ambient).forEach(([a, b]) => {
+        if (a === code) conns.add(b);
+        if (b === code) conns.add(a);
+      });
+      return conns;
+    }
+
+    const svg = document.getElementById('netSvg');
+    const NS = 'http://www.w3.org/2000/svg';
+
+    // Defensive: clear any existing children (prevents doubling if file wasn't serialized cleanly)
+    if (svg) svg.innerHTML = '';
+
+    // Supporting links underneath
+    ambient.forEach(([a, b]) => {
+      const da = domains.find(d => d.code === a);
+      const db = domains.find(d => d.code === b);
+      const line = document.createElementNS(NS, 'line');
+      line.setAttribute('x1', da.x);
+      line.setAttribute('y1', da.y);
+      line.setAttribute('x2', db.x);
+      line.setAttribute('y2', db.y);
+      line.setAttribute('class', 'net-link');
+      line.dataset.a = a;
+      line.dataset.b = b;
+      svg.appendChild(line);
+    });
+
+    // Secondary keystone links above supporting, below primary
+    secondaries.forEach(([a, b]) => {
+      const da = domains.find(d => d.code === a);
+      const db = domains.find(d => d.code === b);
+      const line = document.createElementNS(NS, 'line');
+      line.setAttribute('x1', da.x);
+      line.setAttribute('y1', da.y);
+      line.setAttribute('x2', db.x);
+      line.setAttribute('y2', db.y);
+      line.setAttribute('class', 'net-link secondary');
+      line.dataset.a = a;
+      line.dataset.b = b;
+      svg.appendChild(line);
+    });
+
+    // Primary keystone links on top
+    keystones.forEach(([a, b]) => {
+      const da = domains.find(d => d.code === a);
+      const db = domains.find(d => d.code === b);
+      const line = document.createElementNS(NS, 'line');
+      line.setAttribute('x1', da.x);
+      line.setAttribute('y1', da.y);
+      line.setAttribute('x2', db.x);
+      line.setAttribute('y2', db.y);
+      line.setAttribute('class', 'net-link keystone');
+      line.dataset.a = a;
+      line.dataset.b = b;
+      svg.appendChild(line);
+    });
+
+    // Nodes + labels
+    domains.forEach(d => {
+      const g = document.createElementNS(NS, 'g');
+      g.setAttribute('class', 'net-node-group');
+      g.dataset.code = d.code;
+
+      const circle = document.createElementNS(NS, 'circle');
+      circle.setAttribute('cx', d.x);
+      circle.setAttribute('cy', d.y);
+      circle.setAttribute('r', 34);
+      circle.setAttribute('class', 'net-node');
+      g.appendChild(circle);
+
+      const code = document.createElementNS(NS, 'text');
+      code.setAttribute('x', d.x);
+      code.setAttribute('y', d.y);
+      code.setAttribute('class', 'net-code');
+      code.textContent = d.code;
+      g.appendChild(code);
+
+      // Label outside the node, with directional anchoring so wide labels never overlap nodes or connection lines
+      const angle = Math.atan2(d.y - center.y, d.x - center.x);
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+      const labelDist = 50;
+      const lx = d.x + cosA * labelDist;
+      let ly = d.y + sinA * labelDist;
+
+      let anchor = 'middle';
+      if (cosA > 0.3) anchor = 'start';
+      else if (cosA < -0.3) anchor = 'end';
+
+      // Vertical breathing room: top/bottom labels need extra offset; side labels sit on baseline
+      if (anchor === 'middle') {
+        ly += sinA > 0 ? 16 : -4;
+      } else {
+        ly += 4;
+      }
+
+      const label = document.createElementNS(NS, 'text');
+      label.setAttribute('x', lx);
+      label.setAttribute('y', ly);
+      label.setAttribute('text-anchor', anchor);
+      label.setAttribute('class', 'net-label');
+      label.textContent = d.name;
+      g.appendChild(label);
+
+      g.addEventListener('mouseenter', () => highlightNode(d.code));
+      g.addEventListener('mouseleave', () => unhighlight());
+      g.addEventListener('click', (e) => { e.stopPropagation(); openNetDetail(d); });
+
+      svg.appendChild(g);
+    });
+
+    const canvas = document.getElementById('netCanvas');
+
+    function highlightNode(code) {
+      const conns = connectionsFor(code);
+      canvas.classList.add('has-hover');
+
+      svg.querySelectorAll('.net-node-group').forEach(g => {
+        g.classList.remove('hover', 'connected');
+        if (g.dataset.code === code) g.classList.add('hover');
+        else if (conns.has(g.dataset.code)) g.classList.add('connected');
+      });
+
+      svg.querySelectorAll('.net-link').forEach(l => {
+        l.classList.remove('highlight');
+        if (l.dataset.a === code || l.dataset.b === code) l.classList.add('highlight');
+      });
+    }
+
+    function unhighlight() {
+      canvas.classList.remove('has-hover');
+      svg.querySelectorAll('.net-node-group').forEach(g => g.classList.remove('hover', 'connected'));
+      svg.querySelectorAll('.net-link').forEach(l => l.classList.remove('highlight'));
+    }
+
+    function openNetDetail(d) {
+      document.getElementById('netDetailCode').textContent = d.code + ' · ' + d.label;
+      document.getElementById('netDetailName').textContent = d.name;
+      document.getElementById('netDetailBody').textContent = d.detail;
+      document.getElementById('netDetail').classList.add('show');
+    }
+
+    function closeNetDetail() {
+      const el = document.getElementById('netDetail');
+      if (el) el.classList.remove('show');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (slides[current].id === 's7' && !e.target.closest('.net-canvas')) {
+        closeNetDetail();
+      }
+    });
+
+    /* ============================================
+       EDIT MODE
+       Activate by adding #edit to the URL.
+       ============================================ */
+    const isEditMode = window.location.hash === '#edit';
+    let fileHandle = null;
+    let unsavedChanges = false;
+
+    if (isEditMode) {
+      // Defer to next tick so the SVG network has finished rendering first
+      requestAnimationFrame(initEditMode);
+    }
+
+    window.addEventListener('hashchange', () => {
+      const wantEdit = window.location.hash === '#edit';
+      const isEdit = document.body.classList.contains('editing');
+      if (wantEdit !== isEdit) {
+        if (unsavedChanges) {
+          if (!confirm('You have unsaved changes. Discard them?')) {
+            // Revert hash silently
+            history.replaceState(null, '', window.location.pathname + window.location.search + (isEdit ? '#edit' : ''));
+            return;
+          }
+        }
+        location.reload();
+      }
+    });
+
+    function initEditMode() {
+      document.body.classList.add('editing');
+
+      // Selectors for editable elements. SVG network + nav chrome are deliberately excluded.
+      const selectors = [
+        '.eyebrow', '.display', '.display-sm', '.body', '.cascade-prose',
+        '.cascade-label', '.arrival', '.work-body h3', '.work-body p',
+        '.work-num', '.door-price', '.door-email a',
+        '.body-cascade-label', '.body-cascade-stanza', '.body-cascade-upstream', '.body-cascade-close',
+        '#s1 .hero', '#s1 .mark', '#s1 .footer .micro'
+      ];
+
+      const seen = new Set();
+      selectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => {
+          if (seen.has(el)) return;
+          seen.add(el);
+          el.setAttribute('contenteditable', 'true');
+          el.spellcheck = false;
+          el.addEventListener('input', markUnsaved);
+        });
+      });
+
+      document.addEventListener('keydown', handleEditKeys, true);
+
+      injectEditUI();
+
+      window.addEventListener('beforeunload', (e) => {
+        if (unsavedChanges) {
+          e.preventDefault();
+          e.returnValue = '';
+        }
+      });
+    }
+
+    function markUnsaved() {
+      if (!unsavedChanges) {
+        unsavedChanges = true;
+        const s = document.getElementById('editStatus');
+        if (s) {
+          s.textContent = '• Unsaved';
+          s.classList.add('unsaved');
+        }
+      }
+    }
+
+    function markSaved() {
+      unsavedChanges = false;
+      const s = document.getElementById('editStatus');
+      if (s) {
+        s.textContent = 'Edit mode';
+        s.classList.remove('unsaved');
+      }
+    }
+
+    function handleEditKeys(e) {
+      // Slide nav arrow keys should NOT fire while editing inside a contenteditable
+      // The capturing listener intercepts before the navigation handler can act on arrow keys.
+      if (e.target.isContentEditable) {
+        if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+          e.stopPropagation();
+        }
+        if (e.key === ' ') {
+          e.stopPropagation();
+        }
+      }
+
+      // Cmd/Ctrl+S — save (works anywhere in edit mode)
+      // Cmd/Ctrl+Shift+S — save as
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.shiftKey) {
+          saveAsDeck();
+        } else {
+          saveDeck();
+        }
+        return;
+      }
+
+      if (!e.target.isContentEditable) return;
+
+      // Enter (no shift) → insert <br>
+      if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        document.execCommand('insertHTML', false, '<br>');
+        markUnsaved();
+        return;
+      }
+
+      // Cmd/Ctrl+I → wrap selection in <em> (or unwrap if already)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'i') {
+        e.preventDefault();
+        toggleWrap('em');
+        return;
+      }
+
+      // Cmd/Ctrl+B → wrap selection in <strong>
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        toggleWrap('strong');
+        return;
+      }
+    }
+
+    function toggleWrap(tagName) {
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return;
+      const range = sel.getRangeAt(0);
+      if (range.collapsed) return;
+
+      // Detect if selection sits inside an existing <em>/<strong>
+      let node = range.commonAncestorContainer;
+      while (node && node.nodeType === 3) node = node.parentNode;
+      let existing = null;
+      let walker = node;
+      while (walker && !walker.isContentEditable && walker.tagName?.toLowerCase() !== tagName) {
+        walker = walker.parentNode;
+        if (!walker) break;
+      }
+      if (walker && walker.tagName?.toLowerCase() === tagName) existing = walker;
+
+      if (existing) {
+        // Unwrap: replace existing element with its children
+        const parent = existing.parentNode;
+        while (existing.firstChild) parent.insertBefore(existing.firstChild, existing);
+        parent.removeChild(existing);
+        sel.removeAllRanges();
+        markUnsaved();
+        return;
+      }
+
+      // Wrap
+      const wrapper = document.createElement(tagName);
+      try {
+        range.surroundContents(wrapper);
+      } catch (err) {
+        // Selection spans element boundaries — extract and wrap
+        const contents = range.extractContents();
+        wrapper.appendChild(contents);
+        range.insertNode(wrapper);
+      }
+      sel.removeAllRanges();
+      const newRange = document.createRange();
+      newRange.selectNodeContents(wrapper);
+      sel.addRange(newRange);
+      markUnsaved();
+    }
+
+    function injectEditUI() {
+      const ui = document.createElement('div');
+      ui.className = 'edit-ui';
+      ui.innerHTML = `
+        <div class="edit-status" id="editStatus">Edit mode</div>
+        <div class="edit-save-path" id="editSavePath"></div>
+        <button class="edit-btn" id="editSaveBtn" title="Save (⌘S) — pick existing file to overwrite">Save</button>
+        <button class="edit-btn edit-btn-secondary" id="editSaveAsBtn" title="Save As (⌘⇧S) — choose new location">Save As</button>
+        <button class="edit-btn edit-btn-secondary" id="editExitBtn" title="Exit edit mode">Exit</button>
+      `;
+      document.body.appendChild(ui);
+
+      document.getElementById('editSaveBtn').addEventListener('click', saveDeck);
+      document.getElementById('editSaveAsBtn').addEventListener('click', saveAsDeck);
+      document.getElementById('editExitBtn').addEventListener('click', () => {
+        if (unsavedChanges && !confirm('You have unsaved changes. Exit anyway?')) return;
+        window.location.hash = '';
+      });
+
+      const help = document.createElement('div');
+      help.className = 'edit-help';
+      help.innerHTML = `
+        <div class="edit-help-row"><kbd>Enter</kbd> line break</div>
+        <div class="edit-help-row"><kbd>⌘I</kbd> italic accent</div>
+        <div class="edit-help-row"><kbd>⌘B</kbd> bold ink</div>
+        <div class="edit-help-row"><kbd>⌘S</kbd> save</div>
+        <div class="edit-help-row"><kbd>⌘⇧S</kbd> save as</div>
+        <div class="edit-help-row"><kbd>Esc</kbd> defocus / nav</div>
+      `;
+      document.body.appendChild(help);
+    }
+
+    async function saveDeck() {
+      const html = serializeDeck();
+
+      // Prefer overwriting an existing file (forces user to pick source, not save-as)
+      if (window.showOpenFilePicker) {
+        try {
+          if (!fileHandle) {
+            const handles = await window.showOpenFilePicker({
+              types: [{ description: 'HTML', accept: { 'text/html': ['.html'] } }],
+              multiple: false
+            });
+            fileHandle = handles[0];
+            const perm = await fileHandle.requestPermission({ mode: 'readwrite' });
+            if (perm !== 'granted') {
+              flashToast('Permission denied');
+              fileHandle = null;
+              return;
+            }
+            updateSavePath();
+          }
+          const writable = await fileHandle.createWritable();
+          await writable.write(html);
+          await writable.close();
+          markSaved();
+          flashToast('Saved');
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return;
+          console.warn('FS Access API failed, falling back to download', err);
+        }
+      }
+
+      downloadFallback(html);
+    }
+
+    async function saveAsDeck() {
+      const html = serializeDeck();
+      if (window.showSaveFilePicker) {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: (fileHandle && fileHandle.name) || 'fortify-walkthrough-dark.html',
+            types: [{ description: 'HTML', accept: { 'text/html': ['.html'] } }]
+          });
+          fileHandle = handle;
+          updateSavePath();
+          const writable = await fileHandle.createWritable();
+          await writable.write(html);
+          await writable.close();
+          markSaved();
+          flashToast('Saved');
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return;
+          console.warn('FS Access API failed, falling back to download', err);
+        }
+      }
+      downloadFallback(html);
+    }
+
+    function downloadFallback(html) {
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'fortify-walkthrough-dark.html';
+      a.click();
+      URL.revokeObjectURL(url);
+      markSaved();
+      flashToast('Downloaded');
+    }
+
+    function updateSavePath() {
+      const el = document.getElementById('editSavePath');
+      if (el) {
+        el.textContent = fileHandle ? fileHandle.name : '';
+        el.title = fileHandle ? fileHandle.name : '';
+      }
+    }
+
+    function flashToast(text) {
+      const t = document.createElement('div');
+      t.className = 'edit-toast';
+      t.textContent = text;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 1800);
+    }
+
+    function serializeDeck() {
+      const clone = document.documentElement.cloneNode(true);
+
+      // Strip contenteditable attributes
+      clone.querySelectorAll('[contenteditable]').forEach(el => {
+        el.removeAttribute('contenteditable');
+        el.removeAttribute('spellcheck');
+      });
+
+      // Strip &nbsp; (U+00A0) artifacts that contenteditable leaves behind in text nodes
+      // (cursor positioning near line breaks frequently introduces these)
+      (function stripNbsp(node) {
+        if (node.nodeType === 3) {
+          node.nodeValue = node.nodeValue.replace(/ /g, ' ');
+        } else if (node.nodeType === 1 && node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE') {
+          for (const child of node.childNodes) stripNbsp(child);
+        }
+      })(clone);
+
+      // Strip edit UI
+      clone.querySelectorAll('.edit-ui, .edit-help, .edit-toast').forEach(el => el.remove());
+
+      // Strip 'editing' class from body
+      const body = clone.querySelector('body');
+      if (body) body.classList.remove('editing');
+
+      // Reset slide state: first slide active, others not
+      clone.querySelectorAll('.slide').forEach((s, i) => {
+        if (i === 0) s.classList.add('active');
+        else s.classList.remove('active');
+      });
+
+      // Reset dots
+      clone.querySelectorAll('#dots .dot').forEach((d, i) => {
+        if (i === 0) d.classList.add('active');
+        else d.classList.remove('active');
+      });
+
+      // Reset counter
+      const cc = clone.querySelector('#counterCurrent');
+      if (cc) cc.textContent = '01';
+
+      // Clear SVG-injected network content — it'll be re-rendered by JS on load
+      const svg = clone.querySelector('#netSvg');
+      if (svg) svg.innerHTML = '';
+
+      // Clear dots — they're injected by JS on load, otherwise they'd double
+      const dots = clone.querySelector('#dots');
+      if (dots) dots.innerHTML = '';
+
+      // Clear net-detail panel state
+      ['#netDetailCode', '#netDetailName', '#netDetailBody'].forEach(s => {
+        const el = clone.querySelector(s);
+        if (el) el.textContent = '';
+      });
+      const nd = clone.querySelector('.net-detail');
+      if (nd) nd.classList.remove('show');
+
+      return '<!DOCTYPE html>\n' + clone.outerHTML;
+    }
+
+    /* ============ Touch: swipe nav + rotation reflow (added 2026-06-04) ============ */
+    (function () {
+      const deck = document.querySelector('.deck');
+      if (!deck) return;
+
+      // Whenever a slide becomes active, reset it to the top so navigating
+      // or rotating never leaves you stranded mid-slide.
+      slides.forEach((s) => {
+        new MutationObserver(() => {
+          if (s.classList.contains('active')) s.scrollTop = 0;
+        }).observe(s, { attributes: true, attributeFilter: ['class'] });
+      });
+
+      // Horizontal swipe flips slides. Vertical gestures still scroll a tall
+      // slide natively, and gestures that start on the domain network are
+      // ignored so exploring it never changes the slide.
+      let x0 = null, y0 = null, t0 = 0;
+      const THRESH = 45;   // horizontal px to count as a swipe
+      const RATIO = 1.4;   // horizontal must beat vertical by this much
+
+      deck.addEventListener('touchstart', (e) => {
+        if (e.target.closest('.net-canvas')) { x0 = null; return; }
+        const t = e.touches[0];
+        x0 = t.clientX; y0 = t.clientY; t0 = Date.now();
+      }, { passive: true });
+
+      deck.addEventListener('touchend', (e) => {
+        if (x0 === null) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - x0, dy = t.clientY - y0, dt = Date.now() - t0;
+        if (Math.abs(dx) >= THRESH && Math.abs(dx) > Math.abs(dy) * RATIO && dt < 800) {
+          if (dx < 0) next(); else prev();
+        }
+        x0 = null;
+      }, { passive: true });
+
+      // After a rotation, snap the active slide back to the top once layout settles.
+      function onRotate() {
+        const active = document.querySelector('.slide.active');
+        if (active) requestAnimationFrame(() => { active.scrollTop = 0; });
+      }
+      window.addEventListener('orientationchange', onRotate);
+      window.addEventListener('resize', onRotate);
+    })();
+
+  </script>
+</body>
+</html>
