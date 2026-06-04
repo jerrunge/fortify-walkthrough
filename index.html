@@ -1016,6 +1016,23 @@
       .change-stack .display { font-size: clamp(1.5rem, 4.4vh, 2.4rem); }
     }
 
+
+    /* ===== Fraunces readability test (relayed recipe) — 2026-06-04 =====
+       opsz 144 -> 34 (less extreme contrast), wght 565 (sturdier),
+       WONK 0 (no quirky alternates), looser leading + tighter tracking.
+       Test build only. Canonical decks untouched. ===== */
+    .display, .display em,
+    .display-sm, .display-sm em,
+    #s1 .mark, #s1 .hero, #s1 .hero em, #s1 .footer h2,
+    #s10 .arrival, #s10 .arrival em,
+    .work-body h3, .net-detail h4, .door-price, .net-label {
+      font-variation-settings: 'opsz' 34, 'wght' 565, 'SOFT' 0, 'WONK' 0;
+    }
+    .display, .display-sm, #s1 .hero, #s10 .arrival, .change-stack .display {
+      line-height: 1.2;
+      letter-spacing: -0.012em;
+    }
+
   </style>
 </head>
 <body>
