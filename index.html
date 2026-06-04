@@ -7,7 +7,7 @@
   <title>Fortify · A walkthrough</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
       --ink: #19180D;
@@ -1026,12 +1026,24 @@
     #s1 .mark, #s1 .hero, #s1 .hero em, #s1 .footer h2,
     #s10 .arrival, #s10 .arrival em,
     .work-body h3, .net-detail h4, .door-price, .net-label {
-      font-variation-settings: 'opsz' 34, 'wght' 565, 'SOFT' 0, 'WONK' 0;
+      font-variation-settings: 'opsz' var(--fr-opsz, 34), 'wght' var(--fr-wght, 565), 'SOFT' var(--fr-soft, 0), 'WONK' var(--fr-wonk, 0);
     }
     .display, .display-sm, #s1 .hero, #s10 .arrival, .change-stack .display {
       line-height: 1.2;
       letter-spacing: -0.012em;
     }
+
+
+    /* Fraunces axis tuner (test build only) */
+    #frTuner { position: fixed; top: calc(env(safe-area-inset-top) + 8px); left: 8px; z-index: 60; font-family: var(--font-mono); }
+    #frToggle { background: var(--cream); border: 1px solid rgba(89,59,46,0.4); color: var(--bark); font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: lowercase; padding: 5px 9px; cursor: pointer; opacity: 0.85; }
+    #frToggle:hover { opacity: 1; border-color: var(--rust); color: var(--rust); }
+    #frBody { display: none; margin-top: 6px; background: var(--cream); border: 1px solid rgba(89,59,46,0.32); padding: 11px 13px; width: 216px; box-shadow: 0 14px 34px rgba(25,24,13,0.16); }
+    #frTuner.open #frBody { display: block; }
+    #frBody label { display: block; margin-bottom: 9px; color: var(--bark); font-size: 0.66rem; letter-spacing: 0.08em; }
+    #frBody label span { color: var(--rust); float: right; }
+    #frBody input[type=range] { width: 100%; accent-color: var(--rust); margin-top: 4px; }
+    #frReadout { margin-top: 4px; padding-top: 7px; border-top: 1px solid rgba(89,59,46,0.22); color: var(--ash); font-size: 0.62rem; line-height: 1.5; word-break: break-all; user-select: all; }
 
   </style>
 </head>
@@ -1930,6 +1942,31 @@
       window.addEventListener('resize', onRotate);
     })();
 
+  </script>
+  <div id="frTuner">
+    <button id="frToggle" type="button">Aa tune</button>
+    <div id="frBody">
+      <label>opsz <span id="vOpsz">34</span><input type="range" id="rOpsz" min="9" max="144" step="1" value="34"></label>
+      <label>weight <span id="vWght">565</span><input type="range" id="rWght" min="300" max="900" step="5" value="565"></label>
+      <label>SOFT <span id="vSoft">0</span><input type="range" id="rSoft" min="0" max="100" step="1" value="0"></label>
+      <label>WONK <span id="vWonk">0</span><input type="range" id="rWonk" min="0" max="1" step="1" value="0"></label>
+      <div id="frReadout">'opsz' 34, 'wght' 565, 'SOFT' 0, 'WONK' 0</div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const root = document.documentElement;
+      const tuner = document.getElementById('frTuner');
+      document.getElementById('frToggle').addEventListener('click', () => tuner.classList.toggle('open'));
+      const rows = [['rOpsz','vOpsz','--fr-opsz'],['rWght','vWght','--fr-wght'],['rSoft','vSoft','--fr-soft'],['rWonk','vWonk','--fr-wonk']];
+      const g = (id) => document.getElementById(id);
+      function apply() {
+        rows.forEach(([r,v,prop]) => { const val = g(r).value; g(v).textContent = val; root.style.setProperty(prop, val); });
+        g('frReadout').textContent = "'opsz' "+g('rOpsz').value+", 'wght' "+g('rWght').value+", 'SOFT' "+g('rSoft').value+", 'WONK' "+g('rWonk').value;
+      }
+      rows.forEach(([r]) => g(r).addEventListener('input', apply));
+      apply();
+    })();
   </script>
 </body>
 </html>
