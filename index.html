@@ -7,7 +7,7 @@
   <title>Fortify · A walkthrough</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Bitter:ital,wght@0,100..900;1,100..900&family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
       --ink: #19180D;
@@ -1017,10 +1017,9 @@
     }
 
 
-    /* ===== Fraunces readability test (relayed recipe) — 2026-06-04 =====
-       opsz 144 -> 34 (less extreme contrast), wght 565 (sturdier),
-       WONK 0 (no quirky alternates), looser leading + tighter tracking.
-       Test build only. Canonical decks untouched. ===== */
+    /* ===== Literata display tuning — 2026-06-04 =====
+       Display face = Literata. opsz + wght are live (tuner); SOFT/WONK
+       don't exist on Literata so they're inert. Test build only. ===== */
     .display, .display em,
     .display-sm, .display-sm em,
     #s1 .mark, #s1 .hero, #s1 .hero em, #s1 .footer h2,
@@ -1028,9 +1027,24 @@
     .work-body h3, .net-detail h4, .door-price, .net-label {
       font-variation-settings: 'opsz' var(--fr-opsz, 34), 'wght' var(--fr-wght, 565), 'SOFT' var(--fr-soft, 0), 'WONK' var(--fr-wonk, 0);
     }
-    .display, .display-sm, #s1 .hero, #s10 .arrival, .change-stack .display {
-      line-height: 1.2;
-      letter-spacing: -0.012em;
+    /* Short headlines: balance the wrapped lines so no word is orphaned,
+       and it self-corrects at any width (portrait or landscape). <br> kept. */
+    .display, .display-sm, #s1 .hero, #s1 .footer h2,
+    .change-stack .display, .work-body h3, .net-detail h4, .net-side .display-sm {
+      text-wrap: balance;
+      line-height: 1.16;
+      letter-spacing: -0.008em;
+    }
+    /* The long arrival block: prevent orphan / short last lines. */
+    #s10 .arrival {
+      text-wrap: pretty;
+      line-height: 1.34;
+      letter-spacing: -0.004em;
+    }
+    /* Never hyphenate a headline. */
+    .display, .display-sm, #s1 .hero, #s10 .arrival, .change-stack .display,
+    #s1 .footer h2, .work-body h3, .net-detail h4 {
+      -webkit-hyphens: none; hyphens: none;
     }
 
 
