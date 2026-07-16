@@ -222,10 +222,15 @@
       letter-spacing: 0.04em;
       opacity: 0.5;
     }
-    .snd-a { top: 23vh;    left: -1.4ch; }
-    .snd-b { top: 44vh;    right: -1ch; }
-    .snd-c { bottom: 30vh; left: -0.8ch; }
-    .snd-d { top: 68vh;    right: -0.6ch; }
+    /* Half-hidden by DIMNESS, not by truncation. Clipping these against the
+       viewport edge cut "159/92" down to "59/92" and "19" to "9" — which are not
+       Jeremy's numbers, and 59/92 isn't even a coherent reading. A cropped number
+       is a different number, so edge-clipping is a Law 3 violation, not a style.
+       They sit fully legible in the margin and recede on their own. */
+    .snd-a { top: 23vh;    left: 1.6vw; }
+    .snd-b { top: 44vh;    right: 1.6vw; }
+    .snd-c { bottom: 30vh; left: 1.6vw; }
+    .snd-d { top: 68vh;    right: 1.6vw; }
     body.light .soundings, body.print .soundings { display: none; }
 
     /* Databar — static fallback only. Law 3: no live feed, so no invented number. */
