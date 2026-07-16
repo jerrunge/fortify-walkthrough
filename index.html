@@ -7,51 +7,117 @@
   <title>Fortify · A walkthrough</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400;0,500;0,700;0,900;1,500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --ink: #19180D;
-      --ash: #2E2D29;
-      --bark: #593B2E;
-      --rust: #834112;
-      --olive: #47513D;
-      --moss: #687254;
-      --tan: #BDA27F;
-      --cream: #E6DBCA;
-      --parchment: #F0E9DB;
-      --signal: #D14625;
+    /* ============================================================
+       FORTIFY · A WALKTHROUGH — Due West v2
+       Spec:      jr-os-docs/docs/reference/visual-identity.md (v2, locked Jul 3 2026;
+                  fragments tuned Jul 7)
+       Reference: jr-os-docs/docs/reference/due-west-the-breed.html surface 03
+       Dial:      "Walkthrough deck" = 85/15, dusk ground, serif body.
+       Laws:      no gold hex ever · Signal Red = ONE element per view ·
+                  every mark true · the name is Jeremy in all visible copy.
+       ============================================================ */
 
-      --font-display: 'Literata', Georgia, serif;
-      --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-      --font-mono: 'IBM Plex Mono', monospace;
+    /* --- §Tokens, copied verbatim. Do not edit here; edit the spec. --- */
+    :root{
+      --paper:#EFEEE7;   /* chart paper, daylight ground */
+      --card:#F6F5EE;    /* raised card on paper */
+      --dusk:#242A32;    /* dusk water, evening ground */
+      --dusk-2:#1D2229;  /* deeper dusk (Reckoning) */
+      --land:#26251F;    /* headline ink */
+      --body:#43423A;    /* body ink */
+      --silver:#B7B1A4;  /* beard-silver: metadata, dotted rules */
+      --hairline:#D8D4C6;/* hairlines, borders */
+      --slate:#46606F;   /* structural: links, asides, data accents */
+      --slate-l:#7D93A1; /* dark-ground accents */
+      --sound:#AFC6D0;    /* soundings: brightened per JR fragment (was slate-l, too dim on dusk) */
+      --red:#D14625;     /* Signal Red: chart-magenta duty, ONE per view */
+      --rust:#834112;    /* small hardware: strikethroughs, stitches */
+      --kelp:#4A5A3E;    /* reserve green */
     }
+
+    /* --- §Type --- */
+    :root{
+      --font-display: 'Schibsted Grotesk', system-ui, sans-serif;
+      --font-body:    'Newsreader', Georgia, serif;
+      --font-mono:    'IBM Plex Mono', ui-monospace, monospace;
+    }
+
+    /* --- Surface assignments.
+       :root above is canon and shared across every Due West surface. The block
+       below is only this deck's ground/ink mapping. The three dusk values marked
+       (breed) are lifted from due-west-the-breed.html surface 03, which is the
+       built reference for a deck slide on dusk. --- */
+    body{
+      --ground:   var(--dusk);
+      --ink-h:    #F1EEE5;         /* headline on dusk (breed .deck-h) */
+      --ink-b:    #B9B3A5;         /* body on dusk (breed .deck-b) */
+      --meta:     var(--slate-l);  /* metadata on dusk — 4.8:1, AA */
+      --rule:     #3A424B;         /* rules + dots-off on dusk (breed .dot) */
+      --accent:   var(--slate-l);  /* water voice + structure on dusk */
+      --card-bg:  var(--card);
+      --card-ink: var(--land);
+      --card-meta:var(--body);
+    }
+
+    /* Daylight variant. Same system, paper ground — bright rooms and projection.
+       On dusk the metadata accent is --slate-l (4.8:1, fine at any size). On paper
+       it becomes --slate, which §Accessibility permits for text "only at 14px+/500+".
+       The v1 metadata sizes sit at 11-12.5px/400, so the light variant enforces the
+       floor below rather than shipping slate under its own rule. */
+    body.light{
+      --ground:   var(--paper);
+      --ink-h:    var(--land);
+      --ink-b:    var(--body);
+      --meta:     var(--slate);
+      --rule:     var(--hairline);
+      --accent:   var(--slate);
+      --card-bg:  var(--card);
+      --card-ink: var(--land);
+      --card-meta:var(--body);
+    }
+
+    /* §Accessibility floor: any --slate metadata on the paper ground is text at
+       14px/500 or it is not --slate. Scoped to .light so the dusk deck (which uses
+       --slate-l on --dusk) keeps its finer metadata scale. */
+    body.light .eyebrow,
+    body.light .counter,
+    body.light .micro,
+    body.light .databar,
+    body.light .cascade-label,
+    body.light .body-cascade-label,
+    body.light .work-num,
+    body.light .hint,
+    body.light .net-detail .close {
+      font-size: 0.875rem;   /* 14px */
+      font-weight: 500;
+    }
+    /* Already 14px+ but under the weight floor. */
+    body.light .door-email a,
+    body.light .arrow-btn { font-weight: 500; }
+    body.light .brand span { font-size: 0.875rem; font-weight: 500; }
+    /* The ™ is a symbol at 0.5em — it cannot meet a 14px floor, so on paper it
+       takes body ink instead of slate and leaves the rule alone. */
+    body.light #s1 .mark span { color: var(--body); }
+
+    /* The print variant's wardrobe palette is NOT in this stylesheet. §Tokens
+       relegates legacy Ink/Tan/Parchment to "print pieces ... never digital
+       surfaces", so those hexes ship only in the print build, appended below the
+       core at build time. This file is a digital surface and stays clean of them. */
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
 
     body {
-      background-color: var(--parchment);
-      background-image:
-        radial-gradient(circle at 18% 28%, rgba(189, 162, 127, 0.18) 0%, transparent 55%),
-        radial-gradient(circle at 82% 72%, rgba(131, 65, 18, 0.07) 0%, transparent 60%);
-      color: var(--ink);
+      background: var(--ground);
+      color: var(--ink-b);
       font-family: var(--font-body);
       font-weight: 400;
-      line-height: 1.55;
+      line-height: 1.7;
       overflow: hidden;
       min-height: 100vh;
-    }
-
-    /* Subtle paper grain — adds warmth, never noise */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 1;
-      opacity: 0.45;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-      mix-blend-mode: multiply;
+      -webkit-font-smoothing: antialiased;
     }
 
     .deck {
@@ -95,80 +161,171 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Typography system */
+    /* ===================== MARKS ===================== */
+
+    /* Course line — the slide divider. 2px dashed --red, 14px dash / 8px gap,
+       labelled 270° in Plex Mono 9.5px. On most slides this is the ONE red
+       element (Law 2). */
+    .course {
+      position: fixed;
+      left: 11vw;
+      right: 11vw;
+      bottom: 8.2vh;
+      height: 2px;
+      background: repeating-linear-gradient(90deg, var(--red) 0 14px, transparent 14px 22px);
+      z-index: 9;
+      pointer-events: none;
+      transition: opacity 400ms ease;
+    }
+    .course::after {
+      content: '270°';
+      position: absolute;
+      right: 0;
+      top: -1.3rem;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      color: var(--red);
+      letter-spacing: 0.08em;
+      font-variant-numeric: tabular-nums;
+    }
+    /* Law 2, one red per view: on the pricing slide the red shelf tag spends the
+       red, so the divider stands down to the rule colour. */
+    body:has(#s12.active) .course {
+      background: repeating-linear-gradient(90deg, var(--rule) 0 14px, transparent 14px 22px);
+    }
+    body:has(#s12.active) .course::after { color: var(--meta); }
+
+    /* The foot. On phones a tall slide scrolls (by design), and a fixed course
+       line floating over moving prose reads as a strikethrough — a red rule
+       through "a personal letdown" is exactly the wrong mark in the wrong place.
+       In the breed reference the divider sits above a foot, so the scrolling
+       sizes get that foot: copy fades into the ground before it reaches the mark.
+       Desktop slides never scroll, so it stays off there. */
+    .foot-fade { display: none; }
+
+    /* Soundings — Jeremy's real numbers, half-hidden in the water at the edges.
+       Decorative and aria-hidden. Dusk grounds only (§Accessibility); 270 is not
+       repeated here because the course line and databar already carry it true. */
+    .soundings {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .snd {
+      position: absolute;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--sound);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.04em;
+      opacity: 0.5;
+    }
+    .snd-a { top: 23vh;    left: -1.4ch; }
+    .snd-b { top: 44vh;    right: -1ch; }
+    .snd-c { bottom: 30vh; left: -0.8ch; }
+    .snd-d { top: 68vh;    right: -0.6ch; }
+    body.light .soundings, body.print .soundings { display: none; }
+
+    /* Databar — static fallback only. Law 3: no live feed, so no invented number. */
+    .databar {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      color: var(--meta);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    /* ===================== TYPE ===================== */
+
+    /* Metadata — Plex Mono, lowercase (§Type: "lowercase metadata") */
     .eyebrow {
       font-family: var(--font-mono);
       font-size: 0.78rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--rust);
+      color: var(--meta);
       margin-bottom: 3rem;
       display: inline-flex;
       align-items: center;
       gap: 0.85rem;
+      text-transform: lowercase;
+      font-weight: 500;
     }
     .eyebrow::before {
       content: '';
       width: 28px;
       height: 1px;
-      background: var(--rust);
+      background: var(--rule);
     }
 
+    /* Display — the land voice, set heavy */
     .display {
       font-family: var(--font-display);
-      font-weight: 400;
+      font-weight: 900;
       font-size: clamp(2.4rem, 5.4vw, 5.4rem);
       line-height: 1.04;
-      letter-spacing: -0.022em;
-      color: var(--ink);
+      letter-spacing: -0.02em;
+      color: var(--ink-h);
       max-width: 22ch;
-      font-variation-settings: 'opsz' 144;
-    }
-    .display em {
-      font-style: italic;
-      color: var(--rust);
-      font-variation-settings: 'opsz' 144;
     }
 
     .display-sm {
       font-family: var(--font-display);
-      font-weight: 400;
+      font-weight: 900;
       font-size: clamp(1.8rem, 3.4vw, 3rem);
       line-height: 1.15;
-      letter-spacing: -0.015em;
-      color: var(--ink);
+      letter-spacing: -0.02em;
+      color: var(--ink-h);
       max-width: 30ch;
     }
-    .display-sm em {
-      font-style: italic;
-      color: var(--rust);
-    }
 
+    /* Prose — Newsreader roman. Serif on dark: the deck reads like writing. */
     .body {
       font-family: var(--font-body);
-      font-size: clamp(1rem, 1.18vw, 1.18rem);
-      line-height: 1.65;
-      color: var(--ash);
+      font-size: clamp(1.05rem, 1.25vw, 1.25rem);
+      line-height: 1.7;
+      color: var(--ink-b);
       max-width: 56ch;
       margin-top: 2.2rem;
       font-weight: 400;
     }
     .body strong {
-      color: var(--ink);
+      color: var(--ink-h);
       font-weight: 500;
-    }
-    .body em {
-      font-style: italic;
-      color: var(--rust);
-      font-weight: 400;
     }
 
     .micro {
       font-family: var(--font-mono);
       font-size: 0.72rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--bark);
+      letter-spacing: 0.06em;
+      text-transform: lowercase;
+      color: var(--meta);
+    }
+
+    /* Emphasis inside a headline = the slate secondary phrase (breed .deck-h .sl).
+       Upright: Schibsted 900 carries it, the colour does the work. */
+    .display em,
+    .display-sm em,
+    #s1 .hero em,
+    .change-stack .display em,
+    .work-body h3 em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    /* Emphasis inside prose = the water voice. Newsreader italic, wght 500, slate.
+       Replaces every rust-italic in the v1 deck. */
+    .body em,
+    .cascade-prose em,
+    .body-cascade-stanza em,
+    .body-cascade-upstream em,
+    .body-cascade-close em,
+    .net-detail p em {
+      font-family: var(--font-body);
+      font-style: italic;
+      font-weight: 500;
+      color: var(--accent);
     }
 
     /* SLIDE 1 — title */
@@ -180,32 +337,27 @@
     #s1 .mark {
       font-family: var(--font-display);
       font-size: 1.5rem;
-      font-weight: 500;
-      letter-spacing: -0.01em;
-      color: var(--rust);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: var(--ink-h);
       margin-bottom: 0.6rem;
     }
     #s1 .mark span {
-      color: var(--ash);
+      font-family: var(--font-mono);
+      color: var(--meta);
       font-weight: 400;
-      font-style: italic;
-      margin-left: 0.5rem;
-      font-size: 0.85em;
+      margin-left: 0.35rem;
+      font-size: 0.5em;
+      vertical-align: super;
     }
     #s1 .hero {
       font-family: var(--font-display);
       font-size: clamp(3rem, 7vw, 7.6rem);
-      font-weight: 300;
+      font-weight: 900;
       line-height: 1.02;
-      letter-spacing: -0.03em;
-      color: var(--ink);
+      letter-spacing: -0.02em;
+      color: var(--ink-h);
       max-width: 18ch;
-      font-variation-settings: 'opsz' 144;
-    }
-    #s1 .hero em {
-      font-style: italic;
-      color: var(--rust);
-      font-weight: 400;
     }
     #s1 .footer {
       display: flex;
@@ -218,29 +370,16 @@
     #s1 .footer .right {
       text-align: right;
     }
-    #s1 .footer h2 {
-      font-family: var(--font-display);
-      font-weight: 400;
-      font-style: italic;
-      font-size: 1.2rem;
-      color: var(--ash);
-      margin-bottom: 0.4rem;
-    }
 
     /* SLIDE 4 — two-column body cascade (his + hers) */
     .body-cascade-upstream {
       margin-top: 2.2rem;
       font-family: var(--font-body);
-      font-size: clamp(1rem, 1.18vw, 1.18rem);
-      line-height: 1.6;
-      color: var(--ink);
+      font-size: clamp(1.05rem, 1.25vw, 1.25rem);
+      line-height: 1.65;
+      color: var(--ink-h);
       font-weight: 500;
       max-width: 70ch;
-    }
-    .body-cascade-upstream em {
-      font-style: italic;
-      color: var(--rust);
-      font-weight: 400;
     }
     .body-cascade {
       display: grid;
@@ -256,42 +395,32 @@
     .body-cascade-label {
       font-family: var(--font-mono);
       font-size: 0.76rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--rust);
+      letter-spacing: 0.06em;
+      text-transform: lowercase;
+      color: var(--meta);
       margin-bottom: 1.2rem;
+      font-weight: 500;
     }
     .body-cascade-stanza {
       font-family: var(--font-body);
-      font-size: 1rem;
-      line-height: 1.65;
-      color: var(--ash);
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--ink-b);
     }
     .body-cascade-stanza + .body-cascade-stanza {
       margin-top: 1.4rem;
-    }
-    .body-cascade-stanza em {
-      font-style: italic;
-      color: var(--rust);
-      font-weight: 400;
     }
     .body-cascade-close {
       margin-top: 2.8rem;
       max-width: 70ch;
       font-family: var(--font-body);
-      font-size: clamp(1rem, 1.18vw, 1.18rem);
-      line-height: 1.6;
-      color: var(--ink);
+      font-size: clamp(1.05rem, 1.25vw, 1.25rem);
+      line-height: 1.65;
+      color: var(--ink-h);
       font-weight: 500;
     }
-    .body-cascade-close em {
-      font-style: italic;
-      color: var(--rust);
-      font-weight: 400;
-    }
 
-    /* SLIDE 4 — cascade in a body
-       SLIDE 5 — three more like it */
+    /* SLIDE 5 — three more like it */
     .cascade-stack {
       display: flex;
       flex-direction: column;
@@ -303,30 +432,27 @@
       grid-template-columns: 140px 1fr;
       gap: 2.4rem;
       padding: 1.5rem 0;
-      border-top: 1px solid rgba(89, 59, 46, 0.18);
+      border-top: 1px solid var(--rule);
       align-items: baseline;
     }
     .cascade-row:last-child {
-      border-bottom: 1px solid rgba(89, 59, 46, 0.18);
+      border-bottom: 1px solid var(--rule);
     }
     .cascade-label {
       font-family: var(--font-mono);
       font-size: 0.76rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--rust);
+      letter-spacing: 0.06em;
+      text-transform: lowercase;
+      color: var(--meta);
+      font-weight: 500;
     }
     .cascade-prose {
       font-family: var(--font-body);
-      font-size: 1.02rem;
-      line-height: 1.6;
-      color: var(--ash);
+      font-size: 1.05rem;
+      line-height: 1.65;
+      color: var(--ink-b);
       max-width: 62ch;
-    }
-    .cascade-prose em {
-      font-style: italic;
-      color: var(--rust);
-      font-weight: 400;
+      font-variant-numeric: tabular-nums;
     }
 
     /* SLIDE 7 — domain network */
@@ -346,7 +472,11 @@
     }
     .net-side .body {
       margin-top: 0;
-      font-size: 0.97rem;
+      font-size: 1rem;
+    }
+    .net-side .affordance {
+      margin-top: 2.4rem;
+      color: var(--accent);
     }
     .net-canvas {
       flex: 1;
@@ -365,25 +495,26 @@
       overflow: visible;
     }
 
+    /* The network stays red-free: the course line spends this slide's red. */
     .net-link {
-      stroke: var(--tan);
+      stroke: var(--accent);
       stroke-width: 0.9;
-      opacity: 0.35;
+      opacity: 0.22;
       transition: opacity 320ms ease, stroke 320ms ease, stroke-width 320ms ease;
       fill: none;
     }
     .net-link.secondary {
-      stroke: var(--bark);
+      stroke: var(--accent);
       stroke-width: 1.5;
-      opacity: 0.55;
+      opacity: 0.45;
     }
     .net-link.keystone {
-      stroke: var(--rust);
+      stroke: var(--accent);
       stroke-width: 2.0;
-      opacity: 0.75;
+      opacity: 0.85;
     }
     .net-link.highlight {
-      stroke: var(--rust);
+      stroke: var(--sound);
       stroke-width: 2.6;
       opacity: 1;
     }
@@ -395,39 +526,42 @@
       transform-box: fill-box;
     }
     .net-node {
-      fill: var(--cream);
-      stroke: var(--bark);
+      fill: var(--dusk-2);
+      stroke: var(--accent);
       stroke-width: 1.2;
       transition: fill 280ms, stroke 280ms, stroke-width 280ms;
     }
     .net-node-group:hover .net-node,
     .net-node-group.hover .net-node {
-      fill: var(--rust);
-      stroke: var(--rust);
+      fill: var(--accent);
+      stroke: var(--sound);
     }
     .net-node-group.connected .net-node {
-      stroke: var(--rust);
+      stroke: var(--sound);
       stroke-width: 2;
     }
     .net-code {
       font-family: var(--font-mono);
       font-size: 13px;
       font-weight: 500;
-      fill: var(--bark);
+      fill: var(--accent);
       text-anchor: middle;
       dominant-baseline: middle;
       pointer-events: none;
       transition: fill 280ms;
+      font-variant-numeric: tabular-nums;
     }
     .net-node-group:hover .net-code,
     .net-node-group.hover .net-code {
-      fill: var(--parchment);
+      fill: var(--ground);
     }
+    /* Domain labels — the water voice, Newsreader italic */
     .net-label {
-      font-family: var(--font-display);
+      font-family: var(--font-body);
       font-style: italic;
+      font-weight: 500;
       font-size: 14px;
-      fill: var(--ash);
+      fill: var(--accent);
       pointer-events: none;
       transition: opacity 280ms, fill 280ms;
     }
@@ -448,8 +582,8 @@
       bottom: 4vh;
       left: 8vw;
       right: 8vw;
-      background: var(--cream);
-      border: 1px solid rgba(89, 59, 46, 0.22);
+      background: var(--dusk-2);
+      border: 1px solid var(--rule);
       padding: 1.6rem 2rem 1.4rem;
       max-width: 580px;
       transform: translateY(20px);
@@ -457,7 +591,12 @@
       pointer-events: none;
       transition: opacity 320ms, transform 320ms;
       z-index: 5;
-      box-shadow: 0 18px 40px rgba(25, 24, 13, 0.06);
+      box-shadow: 0 18px 44px rgba(29, 34, 41, 0.55);
+    }
+    body.light .net-detail,
+    body.print .net-detail {
+      background: var(--card);
+      box-shadow: 0 18px 40px rgba(38, 37, 31, 0.08);
     }
     .net-detail.show {
       opacity: 1;
@@ -465,22 +604,24 @@
       pointer-events: auto;
     }
     .net-detail .micro {
-      color: var(--rust);
+      color: var(--meta);
       margin-bottom: 0.5rem;
       display: block;
     }
     .net-detail h4 {
       font-family: var(--font-display);
-      font-weight: 400;
+      font-weight: 900;
       font-size: 1.5rem;
-      color: var(--ink);
+      color: var(--ink-h);
       margin-bottom: 0.7rem;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.02em;
     }
     .net-detail p {
-      font-size: 0.95rem;
-      line-height: 1.6;
-      color: var(--ash);
+      font-family: var(--font-body);
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--ink-b);
+      font-variant-numeric: tabular-nums;
     }
     .net-detail .close {
       position: absolute;
@@ -490,13 +631,12 @@
       border: none;
       font-family: var(--font-mono);
       font-size: 0.72rem;
-      color: var(--bark);
+      color: var(--meta);
       cursor: pointer;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+      text-transform: lowercase;
       transition: color 200ms;
     }
-    .net-detail .close:hover { color: var(--rust); }
+    .net-detail .close:hover { color: var(--ink-h); }
 
     /* SLIDE 8 — the work */
     .work-list {
@@ -514,24 +654,24 @@
     .work-num {
       font-family: var(--font-mono);
       font-size: 0.78rem;
-      color: var(--rust);
-      letter-spacing: 0.1em;
-      padding-top: 0.5rem;
+      color: var(--meta);
+      padding-top: 0.55rem;
       flex: 0 0 auto;
+      font-variant-numeric: tabular-nums;
     }
     .work-body h3 {
       font-family: var(--font-display);
-      font-weight: 400;
+      font-weight: 900;
       font-size: 1.65rem;
-      color: var(--ink);
+      color: var(--ink-h);
       margin-bottom: 0.45rem;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.02em;
     }
     .work-body p {
       font-family: var(--font-body);
-      font-size: 0.98rem;
-      color: var(--ash);
-      line-height: 1.55;
+      font-size: 1rem;
+      color: var(--ink-b);
+      line-height: 1.6;
     }
 
     /* SLIDE 9 — what changes */
@@ -546,34 +686,82 @@
       max-width: none;
     }
 
-    /* SLIDE 10 — the reckoning */
+    /* SLIDE 10 — the reckoning.
+       The deck's one felt block, so the water voice takes it with PRESENCE
+       (§Type: "own margin", "not inline whisper") rather than as an inline italic. */
     #s10 { justify-content: center; text-align: left; }
     #s10 .arrival {
-      font-family: var(--font-display);
-      font-weight: 300;
-      font-size: clamp(2.2rem, 4.6vw, 4.4rem);
+      font-family: var(--font-body);
+      font-style: italic;
+      font-weight: 500;
+      font-variation-settings: 'opsz' 44;
+      /* Sized down from the v1 display clamp: this block is 8 hard-broken lines,
+         and the water voice's margin + rule make it taller than the v1 setting
+         was. Above ~3.4rem it collides with the chrome and the course line. */
+      font-size: clamp(1.4rem, 3.2vw, 3.4rem);
       line-height: 1.14;
-      letter-spacing: -0.02em;
-      color: var(--ink);
+      letter-spacing: -0.01em;
+      color: var(--accent);
       max-width: 52ch;
-      font-variation-settings: 'opsz' 144;
+      margin-left: 2.4rem;
+      padding-left: 2.4rem;
+      border-left: 1px solid var(--rule);
     }
     #s10 .arrival em {
       font-style: italic;
-      color: var(--rust);
+      color: var(--ink-h);
+    }
+    /* On phones the big display type re-wraps the hard breaks; drop the
+       intra-stanza breaks so the copy flows naturally (stanza gap stays). */
+    @media (max-width: 820px) {
+      #s10 .arrival br.hbr { display: none; }
     }
 
-    /* SLIDE 12 — the door */
+    /* SLIDE 12 — the door. Shelf tag: card, silver border, name + mono price +
+       mono spec. The red tag is this view's single red element and the system's
+       one sanctioned joke — pull it the first time it lands wrong with a buyer. */
     #s12 { justify-content: center; }
-    .door-price {
-      font-family: var(--font-display);
-      font-weight: 400;
-      font-style: italic;
-      font-size: clamp(1.8rem, 3vw, 2.6rem);
-      color: var(--rust);
-      letter-spacing: -0.01em;
-      margin-top: 2.6rem;
+    .shelf {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.9rem;
+      margin-top: 2.4rem;
+      /* Tuned to the longest spec line — "30 MIN · NO DECK · NO PITCH", 27ch —
+         sitting on one line. A wrapped spec makes a shelf tag look like a
+         mistake. Re-tune this if the spec copy gets longer. */
+      max-width: 54rem;
     }
+    .tagc {
+      background: var(--card-bg);
+      border: 1px solid var(--silver);
+      border-radius: 3px;
+      padding: 1rem 1.05rem;
+    }
+    .tagc .tn {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: -0.01em;
+      color: var(--card-ink);
+    }
+    .tagc .tp {
+      font-family: var(--font-mono);
+      font-size: 1.35rem;
+      margin-top: 0.3rem;
+      color: var(--card-ink);
+      font-variant-numeric: tabular-nums;
+    }
+    .tagc .tm {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--card-meta);
+      margin-top: 0.45rem;
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+    }
+    .tagc.red { border-color: var(--red); }
+    .tagc.red .tp { color: var(--red); }
+
     .door-email {
       margin-top: 2.4rem;
       font-family: var(--font-mono);
@@ -581,25 +769,26 @@
       letter-spacing: 0.04em;
     }
     .door-email a {
-      color: var(--rust);
+      color: var(--accent);
       text-decoration: none;
-      border-bottom: 1px solid rgba(131, 65, 18, 0.35);
+      border-bottom: 1px solid var(--rule);
       padding-bottom: 2px;
       transition: border-color 220ms, color 220ms;
     }
     .door-email a:hover {
-      color: var(--ink);
-      border-bottom-color: var(--rust);
+      color: var(--ink-h);
+      border-bottom-color: var(--accent);
     }
 
-    /* Chrome */
+    /* ===================== CHROME ===================== */
     .chrome {
       position: fixed;
       z-index: 10;
       pointer-events: none;
       transition: opacity 400ms ease;
     }
-    /* Title slide — hide top header so it doesn'''t compete with the brand mark; keep bottom nav */
+    /* Title slide — hide top header so it doesn't compete with the brand mark;
+       keep bottom nav. The title slide carries its own databar in the footer. */
     body:has(#s1.active) .chrome.top {
       opacity: 0;
     }
@@ -610,26 +799,32 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 1.5rem;
     }
     .brand {
       font-family: var(--font-display);
-      font-weight: 500;
+      font-weight: 900;
       font-size: 1.05rem;
-      color: var(--rust);
-      letter-spacing: -0.01em;
+      color: var(--ink-h);
+      letter-spacing: -0.02em;
+      white-space: nowrap;
     }
     .brand span {
-      color: var(--ash);
+      font-family: var(--font-body);
+      color: var(--accent);
       font-weight: 400;
       font-style: italic;
       margin-left: 0.45rem;
-      font-size: 0.85em;
+      font-size: 0.82em;
+      letter-spacing: 0;
     }
     .counter {
       font-family: var(--font-mono);
       font-size: 0.78rem;
-      letter-spacing: 0.14em;
-      color: var(--bark);
+      letter-spacing: 0.08em;
+      color: var(--meta);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
     .chrome.bottom {
       bottom: 2.6vh;
@@ -648,17 +843,16 @@
       width: 9px;
       height: 9px;
       border-radius: 50%;
-      background: rgba(89, 59, 46, 0.4);
+      background: var(--rule);
       border: none;
       cursor: pointer;
       padding: 0;
       transition: background 250ms, transform 250ms, box-shadow 250ms;
     }
-    .dot:hover { background: rgba(131, 65, 18, 0.7); }
+    .dot:hover { background: var(--accent); }
     .dot.active {
-      background: var(--rust);
+      background: var(--accent);
       transform: scale(1.5);
-      box-shadow: 0 0 0 1px rgba(131, 65, 18, 0.25);
     }
     .nav-arrows {
       display: flex;
@@ -667,22 +861,21 @@
     }
     .arrow-btn {
       background: none;
-      border: 1px solid rgba(89, 59, 46, 0.32);
+      border: 1px solid var(--rule);
       width: 40px;
       height: 32px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--bark);
+      color: var(--meta);
       font-family: var(--font-mono);
       font-size: 1rem;
       transition: all 220ms;
     }
     .arrow-btn:hover {
-      border-color: var(--rust);
-      color: var(--rust);
-      background: rgba(131, 65, 18, 0.05);
+      border-color: var(--accent);
+      color: var(--ink-h);
     }
     .arrow-btn:disabled {
       opacity: 0.28;
@@ -696,19 +889,19 @@
       transform: translateX(-50%);
       font-family: var(--font-mono);
       font-size: 0.7rem;
-      letter-spacing: 0.14em;
-      color: rgba(89, 59, 46, 0.5);
-      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--meta);
+      opacity: 0;
+      text-transform: lowercase;
       pointer-events: none;
       z-index: 9;
-      opacity: 0;
       animation: fadeInOut 4.5s ease forwards;
       animation-delay: 1.2s;
     }
     @keyframes fadeInOut {
       0% { opacity: 0; }
-      25% { opacity: 1; }
-      80% { opacity: 1; }
+      25% { opacity: 0.75; }
+      80% { opacity: 0.75; }
       100% { opacity: 0; }
     }
 
@@ -720,88 +913,14 @@
       .net-canvas { height: 60vh; }
       .work-list { grid-template-columns: 1fr; gap: 1.6rem; }
       .chrome.top, .chrome.bottom { left: 6vw; right: 6vw; }
+      .course { left: 6vw; right: 6vw; }
       .cascade-row { grid-template-columns: 100px 1fr; gap: 1.2rem; }
       .body-cascade { grid-template-columns: 1fr; gap: 2rem; }
+      .shelf { grid-template-columns: 1fr; gap: 0.7rem; max-width: 26rem; }
+      #s10 .arrival { margin-left: 0; padding-left: 1.4rem; }
     }
-
-    /* ============================================
-       DARK MODE OVERRIDES
-       Activate by adding class="dark" to <body>
-       Palette + original light-mode rules untouched
-       ============================================ */
-    body.dark {
-      /* Brighten rust slightly so small mono labels + italic accents stay legible on ink */
-      --rust: #AC5618;
-
-      background-color: var(--ink);
-      background-image:
-        radial-gradient(circle at 18% 28%, rgba(189, 162, 127, 0.05) 0%, transparent 55%),
-        radial-gradient(circle at 82% 72%, rgba(172, 86, 24, 0.10) 0%, transparent 60%);
-      color: var(--parchment);
-    }
-    body.dark::before {
-      opacity: 0.22;
-      mix-blend-mode: screen;
-    }
-
-    /* Headlines + body copy — light text */
-    body.dark .display,
-    body.dark .display-sm,
-    body.dark #s1 .hero,
-    body.dark #s10 .arrival,
-    body.dark .work-body h3,
-    body.dark .body,
-    body.dark .body strong,
-    body.dark .cascade-prose,
-    body.dark .body-cascade-stanza,
-    body.dark .body-cascade-upstream,
-    body.dark .body-cascade-close,
-    body.dark .work-body p {
-      color: var(--parchment);
-    }
-
-    /* Small / mono labels */
-    body.dark .micro,
-    body.dark .counter,
-    body.dark .arrow-btn,
-    body.dark #s1 .footer h2,
-    body.dark #s1 .mark span,
-    body.dark .brand span {
-      color: var(--tan);
-    }
-
-    /* Borders + rules — bark rgba flipped to tan rgba */
-    body.dark .cascade-row { border-top-color: rgba(189, 162, 127, 0.18); }
-    body.dark .cascade-row:last-child { border-bottom-color: rgba(189, 162, 127, 0.18); }
-    body.dark .arrow-btn { border-color: rgba(189, 162, 127, 0.32); }
-    body.dark .dot { background: rgba(189, 162, 127, 0.4); }
-    body.dark .dot:hover { background: rgba(172, 86, 24, 0.75); }
-    body.dark .dot.active { box-shadow: 0 0 0 1px rgba(172, 86, 24, 0.3); }
-    body.dark .hint { color: rgba(189, 162, 127, 0.5); }
-    body.dark .arrow-btn:hover { background: rgba(172, 86, 24, 0.10); }
-
-    /* Domain network — node fills go dark, strokes + text go warm-light */
-    body.dark .net-node {
-      fill: var(--ash);
-      stroke: var(--tan);
-    }
-    body.dark .net-code { fill: var(--tan); }
-    body.dark .net-label { fill: var(--tan); }
-    body.dark .net-detail {
-      background: var(--ash);
-      border-color: rgba(189, 162, 127, 0.22);
-      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
-    }
-    body.dark .net-detail h4 { color: var(--parchment); }
-    body.dark .net-detail p,
-    body.dark .net-detail .close { color: var(--tan); }
-
-    /* Door email — brighten link border on dark */
-    body.dark .door-email a {
-      border-bottom-color: rgba(172, 86, 24, 0.5);
-    }
-    body.dark .door-email a:hover {
-      color: var(--parchment);
+    @media (max-width: 460px) {
+      .chrome.top .databar { display: none; }
     }
 
     /* ============================================
@@ -813,11 +932,11 @@
       transition: outline 140ms ease;
     }
     body.editing [contenteditable]:hover {
-      outline: 1px dashed rgba(172, 86, 24, 0.45);
+      outline: 1px dashed var(--accent);
       outline-offset: 6px;
     }
     body.editing [contenteditable]:focus {
-      outline: 2px solid var(--rust);
+      outline: 2px solid var(--accent);
       outline-offset: 6px;
     }
 
@@ -830,53 +949,53 @@
       gap: 0.5rem;
       align-items: center;
       font-family: var(--font-mono);
-      background: rgba(46, 45, 41, 0.92);
+      background: var(--dusk-2);
       padding: 0.5rem 0.6rem 0.5rem 0.9rem;
-      border: 1px solid rgba(189, 162, 127, 0.3);
+      border: 1px solid var(--rule);
       backdrop-filter: blur(6px);
     }
     .edit-status {
       font-size: 0.72rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--tan);
+      letter-spacing: 0.06em;
+      text-transform: lowercase;
+      color: var(--slate-l);
       padding-right: 0.6rem;
-      border-right: 1px solid rgba(189, 162, 127, 0.2);
+      border-right: 1px solid var(--rule);
     }
-    .edit-status.unsaved { color: #E8A06D; }
+    .edit-status.unsaved { color: var(--sound); }
     .edit-save-path {
       font-family: var(--font-mono);
       font-size: 0.66rem;
-      color: var(--tan);
+      color: var(--slate-l);
       max-width: 180px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       padding-right: 0.6rem;
-      border-right: 1px solid rgba(189, 162, 127, 0.2);
+      border-right: 1px solid var(--rule);
     }
     .edit-save-path:empty { display: none; }
     .edit-btn {
       padding: 0.45rem 0.9rem;
-      background: var(--rust);
-      color: var(--parchment);
+      background: var(--slate);
+      color: var(--paper);
       border: none;
       font-family: var(--font-mono);
       font-size: 0.72rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      text-transform: lowercase;
       cursor: pointer;
       transition: background 150ms;
     }
-    .edit-btn:hover { background: #C5601C; }
+    .edit-btn:hover { background: var(--slate-l); }
     .edit-btn-secondary {
       background: transparent;
-      color: var(--tan);
-      border: 1px solid rgba(189, 162, 127, 0.3);
+      color: var(--slate-l);
+      border: 1px solid var(--rule);
     }
     .edit-btn-secondary:hover {
-      background: rgba(189, 162, 127, 0.08);
-      color: var(--parchment);
+      background: rgba(125, 147, 161, 0.10);
+      color: var(--paper);
     }
 
     .edit-help {
@@ -886,28 +1005,28 @@
       z-index: 100;
       font-family: var(--font-mono);
       font-size: 0.66rem;
-      color: var(--tan);
-      background: rgba(46, 45, 41, 0.9);
+      color: var(--slate-l);
+      background: var(--dusk-2);
       padding: 0.7rem 0.9rem;
-      border: 1px solid rgba(189, 162, 127, 0.2);
+      border: 1px solid var(--rule);
       backdrop-filter: blur(6px);
       display: flex;
       flex-direction: column;
       gap: 0.42rem;
       line-height: 1;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.04em;
     }
     .edit-help-row { display: flex; align-items: center; gap: 0.6rem; }
     .edit-help kbd {
       display: inline-block;
-      background: rgba(189, 162, 127, 0.14);
+      background: rgba(125, 147, 161, 0.14);
       padding: 2px 6px;
-      border: 1px solid rgba(189, 162, 127, 0.22);
+      border: 1px solid var(--rule);
       font-family: var(--font-mono);
       font-size: 0.66rem;
       min-width: 2.4em;
       text-align: center;
-      color: var(--parchment);
+      color: var(--paper);
     }
 
     .edit-toast {
@@ -915,16 +1034,16 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: var(--rust);
-      color: var(--parchment);
+      background: var(--slate);
+      color: var(--paper);
       padding: 1.1rem 2rem;
       font-family: var(--font-mono);
       font-size: 0.82rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      text-transform: lowercase;
       z-index: 200;
       animation: toastIn 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
-      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 24px 48px rgba(29, 34, 41, 0.4);
     }
     @keyframes toastIn {
       from { opacity: 0; transform: translate(-50%, -40%); }
@@ -932,7 +1051,7 @@
     }
 
     /* ============================================
-       MOBILE + ORIENTATION ADAPT  (added 2026-06-04)
+       MOBILE + ORIENTATION ADAPT  (added 2026-06-04, preserved)
        Overlay only. Every desktop rule above is untouched.
        Goal: clean render and live reflow when a phone is
        rotated between portrait and landscape, plus touch
@@ -962,6 +1081,15 @@
       .dot { width: 11px; height: 11px; }
       .dots { gap: 0.7rem; }
       .hint { display: none; }            /* keyboard hint is wrong on touch */
+      .soundings { display: none; }       /* no room to hide numbers at the edge */
+      .foot-fade {
+        display: block;
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        z-index: 8;
+        pointer-events: none;
+        background: linear-gradient(to top, var(--ground) 0 72%, transparent 100%);
+      }
       .net-detail {
         position: fixed;
         left: 4vw; right: 4vw;
@@ -977,12 +1105,16 @@
         padding: calc(env(safe-area-inset-top) + 9vh) 7vw
                  calc(env(safe-area-inset-bottom) + 13vh);
       }
+      /* Clear the nav: the dots/arrows occupy roughly the bottom 62px here. */
+      .course { left: 7vw; right: 7vw; bottom: calc(env(safe-area-inset-bottom) + 9vh); }
+      /* Tall enough to cover the nav, the mark and its label. */
+      .foot-fade { height: calc(env(safe-area-inset-bottom) + 15vh); }
       .display      { font-size: clamp(2rem, 8.5vw, 3.2rem); max-width: 18ch; }
       .display-sm   { font-size: clamp(1.6rem, 6.8vw, 2.4rem); max-width: 24ch; }
       #s1 .hero     { font-size: clamp(2.6rem, 11vw, 4rem); max-width: 14ch; }
       #s10 .arrival { font-size: clamp(1.7rem, 6.4vw, 2.4rem); max-width: 30ch; }
       .body, .body-cascade-upstream, .body-cascade-close,
-      .cascade-prose { font-size: 1.02rem; max-width: 100%; }
+      .cascade-prose { font-size: 1.05rem; max-width: 100%; }
       .eyebrow { margin-bottom: 1.6rem; }
       #s7 { flex-direction: column; align-items: stretch; justify-content: flex-start;
             gap: 1.4rem; padding-left: 7vw; padding-right: 7vw; }
@@ -993,6 +1125,7 @@
       .cascade-row { grid-template-columns: 92px 1fr; gap: 1rem; }
       .change-stack .display { font-size: clamp(2rem, 9vw, 3.4rem); }
       #s1 .footer { gap: 1.5rem; }
+      .shelf { grid-template-columns: 1fr; }
     }
 
     /* PHONE / SHORT LANDSCAPE: wide and short. Vertical space is the
@@ -1001,8 +1134,15 @@
     @media (orientation: landscape) and (max-height: 600px) {
       .slide {
         padding: calc(env(safe-area-inset-top) + 7vh) 8vw
-                 calc(env(safe-area-inset-bottom) + 9vh);
+                 calc(env(safe-area-inset-bottom) + 19vh);
       }
+      /* Vertical space is scarce here (~390px). The divider has to clear the nav
+         row, and there is no room above it for the 270° label — the databar is
+         visible at this width and carries the bearing true, so the label stands
+         down rather than landing inside the arrow button. */
+      .course { left: 8vw; right: 8vw; bottom: calc(env(safe-area-inset-bottom) + 16vh); }
+      .course::after { display: none; }
+      .foot-fade { height: calc(env(safe-area-inset-bottom) + 24vh); }
       .display      { font-size: clamp(1.6rem, 4.6vh, 2.6rem); max-width: 26ch; }
       .display-sm   { font-size: clamp(1.4rem, 4vh, 2rem); max-width: 34ch; }
       #s1 .hero     { font-size: clamp(2rem, 7.5vh, 3.4rem); max-width: 18ch; }
@@ -1014,50 +1154,35 @@
       .net-canvas { height: 82vh; max-height: none; }
       .work-list { grid-template-columns: 1fr 1fr; gap: 1rem 2.5vw; margin-top: 1.4rem; }
       .change-stack .display { font-size: clamp(1.5rem, 4.4vh, 2.4rem); }
+      /* max-width must be released here: the <=960px rule caps the shelf at 26rem
+         for its single column, and putting three columns back inside that cap
+         squeezes each card to ~108px and shreds the spec lines. */
+      .shelf { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem;
+               margin-top: 1.2rem; max-width: none; }
+      .tagc { padding: 0.7rem 0.75rem; }
+      .tagc .tp { font-size: 1.1rem; }
     }
 
-
-    /* ===== Literata display tuning — 2026-06-04 =====
-       Display face = Literata. opsz + wght are live (tuner); SOFT/WONK
-       don't exist on Literata so they're inert. Test build only. ===== */
-    .display, .display em,
-    .display-sm, .display-sm em,
-    #s1 .mark, #s1 .hero, #s1 .hero em, #s1 .footer h2,
-    #s10 .arrival, #s10 .arrival em,
-    .work-body h3, .net-detail h4, .door-price, .net-label {
-      font-variation-settings: 'opsz' var(--fr-opsz, 34), 'wght' var(--fr-wght, 650), 'SOFT' var(--fr-soft, 0), 'WONK' var(--fr-wonk, 0);
-    }
-    /* Short headlines: balance the wrapped lines so no word is orphaned,
-       and it self-corrects at any width (portrait or landscape). <br> kept. */
-    .display, .display-sm, #s1 .hero, #s1 .footer h2,
+    /* ===== Headline balance — PRESERVED from the 2026-06-04 engineering pass.
+       Short headlines: balance the wrapped lines so no word is orphaned,
+       and it self-corrects at any width (portrait or landscape). <br> kept. ===== */
+    .display, .display-sm, #s1 .hero,
     .change-stack .display, .work-body h3, .net-detail h4, .net-side .display-sm {
       text-wrap: balance;
       line-height: 1.16;
-      letter-spacing: -0.008em;
+      letter-spacing: -0.02em;
     }
     /* The long arrival block: prevent orphan / short last lines. */
     #s10 .arrival {
       text-wrap: pretty;
       line-height: 1.34;
-      letter-spacing: -0.004em;
+      letter-spacing: -0.01em;
     }
     /* Never hyphenate a headline. */
     .display, .display-sm, #s1 .hero, #s10 .arrival, .change-stack .display,
-    #s1 .footer h2, .work-body h3, .net-detail h4 {
+    .work-body h3, .net-detail h4 {
       -webkit-hyphens: none; hyphens: none;
     }
-
-
-    /* Fraunces axis tuner (test build only) */
-    #frTuner { position: fixed; top: calc(env(safe-area-inset-top) + 8px); left: 8px; z-index: 60; font-family: var(--font-mono); }
-    #frToggle { background: var(--cream); border: 1px solid rgba(89,59,46,0.4); color: var(--bark); font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: lowercase; padding: 5px 9px; cursor: pointer; opacity: 0.85; }
-    #frToggle:hover { opacity: 1; border-color: var(--rust); color: var(--rust); }
-    #frBody { display: none; margin-top: 6px; background: var(--cream); border: 1px solid rgba(89,59,46,0.32); padding: 11px 13px; width: 216px; box-shadow: 0 14px 34px rgba(25,24,13,0.16); }
-    #frTuner.open #frBody { display: block; }
-    #frBody label { display: block; margin-bottom: 9px; color: var(--bark); font-size: 0.66rem; letter-spacing: 0.08em; }
-    #frBody label span { color: var(--rust); float: right; }
-    #frBody input[type=range] { width: 100%; accent-color: var(--rust); margin-top: 4px; }
-    #frReadout { margin-top: 4px; padding-top: 7px; border-top: 1px solid rgba(89,59,46,0.22); color: var(--ash); font-size: 0.62rem; line-height: 1.5; word-break: break-all; user-select: all; }
 
   </style>
 </head>
@@ -1075,6 +1200,9 @@
       <div class="stagger footer">
         <div>
           <span class="micro">A walkthrough</span>
+        </div>
+        <div class="right">
+          <span class="databar">PACIFICA, CA · 270° W</span>
         </div>
       </div>
     </div>
@@ -1167,7 +1295,7 @@
         <div class="eyebrow">The ten domains</div>
         <h2 class="display-sm">The network <em>is</em> the model.</h2>
         <p class="body" style="margin-top: 1.2rem;">No domain is independent. The 22 documented connections are where coaching lives.</p>
-        <p class="micro" style="margin-top: 2.4rem; color: var(--rust);">→ Hover or tap any domain</p>
+        <p class="micro affordance">→ Hover or tap any domain</p>
       </div>
       <div class="net-canvas" id="netCanvas">
         <svg viewBox="0 0 800 800" id="netSvg" preserveAspectRatio="xMidYMid meet"></svg>
@@ -1239,7 +1367,7 @@
     <!-- SLIDE 10 — the reckoning -->
     <div class="slide" id="s10">
       <div class="stagger">
-        <h2 class="arrival">The existence you always knew was possible<br>is found by <em>going through the reckoning,</em><br>with someone beside you,<br>and rebuilding from what's true.<br><br>Optimizing harder is a waste of fuel and time.</h2>
+        <h2 class="arrival">The existence you always knew <br class="hbr">was possible is found by <br class="hbr"><em>going through the reckoning,</em> <br class="hbr">with someone beside you, <br class="hbr">and rebuilding from what's true.<br><br>Optimizing harder is a <br class="hbr">waste of fuel and time.</h2>
       </div>
     </div>
 
@@ -1263,7 +1391,23 @@
         <h2 class="display-sm">Six months.<br>Weekly sessions.<br><em>In-person intensives.</em></h2>
       </div>
       <div class="stagger">
-        <p class="door-price">Sixty thousand dollars.</p>
+        <div class="shelf">
+          <div class="tagc">
+            <div class="tn">Discovery call</div>
+            <div class="tp">$0</div>
+            <div class="tm">30 MIN · NO DECK · NO PITCH</div>
+          </div>
+          <div class="tagc">
+            <div class="tn">Fortify engagement</div>
+            <div class="tp">$60,000</div>
+            <div class="tm">6 MO · WKLY 1:1 · ALWAYS ON</div>
+          </div>
+          <div class="tagc red">
+            <div class="tn">Excuses</div>
+            <div class="tp">$0.00</div>
+            <div class="tm">PLENTY · DISCONTINUED</div>
+          </div>
+        </div>
       </div>
       <div class="stagger">
         <p class="door-email"><a href="mailto:jer@jeremyrunge.com">jer@jeremyrunge.com</a></p>
@@ -1272,10 +1416,28 @@
 
   </div>
 
+  <!-- Soundings: Jeremy's real numbers, half-hidden in the water. Decorative.
+       270 is carried true by the course line and the databar, so it is not
+       repeated here. Dusk grounds only — hidden on light/print by CSS. -->
+  <div class="soundings" aria-hidden="true">
+    <span class="snd snd-a">159/92</span>
+    <span class="snd snd-b">74</span>
+    <span class="snd snd-c">19</span>
+    <span class="snd snd-d">0</span>
+  </div>
+
+  <!-- Course line: the slide divider, and this view's one red element (Law 2). -->
+  <div class="course" aria-hidden="true"></div>
+
+  <!-- The foot: on scrolling phone sizes, copy fades into the ground before it
+       reaches the course line. Off on desktop, where slides do not scroll. -->
+  <div class="foot-fade" aria-hidden="true"></div>
+
   <!-- Fixed chrome -->
   <div class="chrome top">
     <div class="brand">Fortify<span>a walkthrough</span></div>
-    <div class="counter"><span id="counterCurrent">01</span> · <span id="counterTotal">12</span></div>
+    <div class="databar">PACIFICA, CA · 270° W</div>
+    <div class="counter"><span id="counterCurrent">01</span> / <span id="counterTotal">12</span></div>
   </div>
 
   <div class="chrome bottom">
@@ -1589,7 +1751,8 @@
       const selectors = [
         '.eyebrow', '.display', '.display-sm', '.body', '.cascade-prose',
         '.cascade-label', '.arrival', '.work-body h3', '.work-body p',
-        '.work-num', '.door-price', '.door-email a',
+        '.work-num', '.door-email a',
+        '.tagc .tn', '.tagc .tp', '.tagc .tm',
         '.body-cascade-label', '.body-cascade-stanza', '.body-cascade-upstream', '.body-cascade-close',
         '#s1 .hero', '#s1 .mark', '#s1 .footer .micro'
       ];
@@ -1956,31 +2119,6 @@
       window.addEventListener('resize', onRotate);
     })();
 
-  </script>
-  <div id="frTuner">
-    <button id="frToggle" type="button">Aa tune</button>
-    <div id="frBody">
-      <label>opsz <span id="vOpsz">34</span><input type="range" id="rOpsz" min="9" max="144" step="1" value="34"></label>
-      <label>weight <span id="vWght">650</span><input type="range" id="rWght" min="300" max="900" step="5" value="650"></label>
-      <label>SOFT <span id="vSoft">0</span><input type="range" id="rSoft" min="0" max="100" step="1" value="0"></label>
-      <label>WONK <span id="vWonk">0</span><input type="range" id="rWonk" min="0" max="1" step="1" value="0"></label>
-      <div id="frReadout">'opsz' 34, 'wght' 650, 'SOFT' 0, 'WONK' 0</div>
-    </div>
-  </div>
-  <script>
-    (function () {
-      const root = document.documentElement;
-      const tuner = document.getElementById('frTuner');
-      document.getElementById('frToggle').addEventListener('click', () => tuner.classList.toggle('open'));
-      const rows = [['rOpsz','vOpsz','--fr-opsz'],['rWght','vWght','--fr-wght'],['rSoft','vSoft','--fr-soft'],['rWonk','vWonk','--fr-wonk']];
-      const g = (id) => document.getElementById(id);
-      function apply() {
-        rows.forEach(([r,v,prop]) => { const val = g(r).value; g(v).textContent = val; root.style.setProperty(prop, val); });
-        g('frReadout').textContent = "'opsz' "+g('rOpsz').value+", 'wght' "+g('rWght').value+", 'SOFT' "+g('rSoft').value+", 'WONK' "+g('rWonk').value;
-      }
-      rows.forEach(([r]) => g(r).addEventListener('input', apply));
-      apply();
-    })();
   </script>
 </body>
 </html>
